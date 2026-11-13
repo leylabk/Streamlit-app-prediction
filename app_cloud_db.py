@@ -92,13 +92,13 @@ with tab1:
         Estimate hourly demand based on weather, time, calendar and location factors outlined above.  
         You have two options here - automatic and manual prediction.
 
-        ##### Automatic Prediction
+        - **Automatic Prediction**  
         For up to 5 days from now – 
         Enter your desired date and time, and get the predicted demand.    
         The weather forecast will be fetched from [OpenWeather](https://openweathermap.org/api/forecast5?collection=current_forecast)², 
         and all the other factors will be generated automatically.
 
-        ##### Manual Prediction
+        - **Manual Prediction**  
         For a later time point or a hypothetical scenario – 
         Enter your desired date and time, along with the weather and calendar factors, and get the predicted demand. 
         Use this option if you want a prediction for a date far in the future for which there is no weather forecast yet, 
