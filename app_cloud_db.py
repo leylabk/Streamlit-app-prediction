@@ -65,43 +65,58 @@ with tab1:
         to analyze and predict hourly bike-sharing demand.
 
         #### Factors Used for Predictions
-        - **Weather Factors:** Overall weather conditions (clear, cloudy, rainy, drizzly, foggy, misty), temperature, humidity, wind speed, amount of rainfall and snowfall in the previous hour
-        - **Time Factors:** Month and hour of the day
-        - **Calendar Factors:** Whether it is working day (vs. a holiday/weekend) and whether it is a school break (Schulferien; vs. regular school time)
-        - **Location Factor:** City name (Berlin, Cologne, Dresden)
+        - **Weather Factors:** Overall weather conditions (clear, cloudy, rainy, drizzly, foggy, misty), temperature, humidity, wind speed, amount of rainfall and snowfall in the previous hour.
+        - **Time Factors:** Month and hour of the day.
+        - **Calendar Factors:** Whether it is working day (vs. a holiday/weekend) and whether it is a school break (Schulferien; vs. regular school time).
+        - **Location Factor:** City name (Berlin, Cologne, Dresden).
 
         #### Target that We Are Predicting
         **Started bike trips:** The number of bike-sharing trips started within each hour. It represents the demand for available ready-to-use bikes that a company needs to prepare.
 
         #### Data Sources
         - **Bike-Sharing Data:** Historical bike-sharing records obtained
-        from the [European Bike Sharing Dataset](https://github.com/tumftm/european-bike-sharing-dataset)
+        from the [European Bike Sharing Dataset](https://github.com/tumftm/european-bike-sharing-dataset)¹.
         - **Weather Data:** Weather records collected using the
         [OpenWeather API](https://openweathermap.org/api), including temperature, humidity, wind speed, rainfall,
-        and snowfall
-        - **Calendar Data:** Working day information generated using a Python library; school break information taken from the [Schulferien website](https://www.schulferien.org/deutschland/ferien/)
+        and snowfall.
+        - **Calendar Data:** Working day information generated using a Python library; school break information taken from the 
+        [Schulferien website](https://www.schulferien.org/deutschland/ferien/).
         
         
         ## What Can You Explore?
 
-        - **Data Exploration:** Examine the dataset and identify usage patterns.
-        - **Data Visualization:** Investigate how weather, time, and calendar
-        factors affect bicycle demand.
-        - **Model Insights:** Explore the performance and important features
-        of the selected CatBoost model.
-        - **Demand Prediction:** Estimate hourly bicycle usage based on
-        selected conditions.
+        #### Data Visualization
+        Investigate how weather, time, and calendar factors affect bike-sharing demand in Berlin, Cologne, and Dresden.    
 
-        ### Explore the App!
-        Navigate through the pages to explore bike-sharing patterns, 
-        gain insights into the factors influencing bicycle usage, 
-        and predict hourly bike-sharing demand using our best-performing CatBoost model.
+        #### Prediction of Bike-Sharing Demand
+        Estimate hourly demand based on weather, time, calendar and location factors outlined above.  
+        You have two options here - automatic and manual prediction.
+
+        ##### Automatic Prediction
+        For up to 5 days from now – 
+        Enter your desired date and time, and get the predicted demand.    
+        The weather forecast will be fetched from [OpenWeather](https://openweathermap.org/api/forecast5?collection=current_forecast)², 
+        and all the other factors will be generated automatically.
+
+        ##### Manual Prediction
+        For a later time point or a hypothetical scenario – 
+        Enter your desired date and time, along with the weather and calendar factors, and get the predicted demand. 
+        Use this option if you want a prediction for a date far in the future for which there is no weather forecast yet, 
+        or if you want to see the demand for a hypothetical scenario (a sunny summer weekend or a stormy winter night).
+
     """)
 
     st.caption(
-    "Dataset source: Waldner et al. (2025), "
+    "¹Dataset source: Waldner et al. (2025), "
     "Data-Driven Insights into (E-)Bike-Sharing, Transportation. "
     "Licensed under CC BY-NC 4.0."
+    )
+    
+    st.caption(
+    "²OpenWeather only has 3-hour weather forecasts available to the public for free, while hourly forecasts are behind a paywall. 
+    This means that our app has access to only one forecast for a 3-hour window, for example, from 09:00 to 12:00, not one forecast for each hour. 
+    This reduces the accuracy of the automatic predictions. 
+    If you need an accurate prediction for specific known weather conditions, please use the manual prediction option."
     )
 
 
