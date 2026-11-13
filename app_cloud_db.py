@@ -56,17 +56,24 @@ tab1, tab2, tab3, tab4 = st.tabs(["Home",
 with tab1:
     st.write("""
         ## About the App
-        This app predicts hourly bike-sharing demand in Berlin, Dresden, and Cologne based on weather and time. 
-        
-        We trained a machine learning model on past bike-sharing data from these cities from years 2022-2023  – on up to 2M trips per city.
-        
+        This app predicts hourly bike-sharing demand in Berlin, Dresden, and Cologne based on weather and time.  
+        We trained a machine learning model on past bike-sharing data from these cities from years 2022-2023  – on up to 2M trips per city.  
         So now you can estimate the demand for a future date – this way, your company can prepare enough bikes to keep your customers happy!
 
-        ### About the Dataset
-        This project combines bike-sharing, weather, and calendar data
-        from different sources to analyze and predict hourly bicycle usage.
-        This project combines bike-sharing, weather, and calendar data
-        from different sources to analyze and predict hourly bicycle usage.
+        ## About the Dataset
+        We combined bike-sharing data, weather records, time and calendar data from different sources 
+        to analyze and predict hourly bike-sharing demand.
+
+        ### Factors Used for Predictions
+        - **Weather Factors:** Overall weather conditions (clear, cloudy, rainy, drizzly, foggy, misty), temperature, humidity, wind speed, amount of rainfall and snowfall in the previous hour
+        - **Time Factors:** Month and hour of the day
+        - **Calendar Factors:** Whether it is working day (vs. a holiday/weekend) and whether it is a school break (Schulferien; vs. regular school time)
+        - **Location Factor:** City name (Berlin, Cologne, Dresden)
+
+        ### Target that We Are Predicting
+        **Started bike trips:** The number of bike-sharing trips started within each hour. It represents the demand for available ready-to-use bikes that a company needs to prepare.
+
+
 
         **Data Sources:**
 
