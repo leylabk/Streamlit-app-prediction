@@ -104,6 +104,9 @@ with tab1:
         Use this option if you want a prediction for a date far in the future for which there is no weather forecast yet, 
         or if you want to see the demand for a hypothetical scenario (a sunny summer weekend or a stormy winter night).
 
+        #### Our GitHub Repository
+        To learn more about the data and the machine learning models we used, please visit our [GitHub page](https://github.com/leylabk/Streamlit-app-prediction)!
+
     """)
 
     st.caption(
