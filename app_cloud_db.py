@@ -113,10 +113,10 @@ with tab1:
     )
     
     st.caption(
-    "²OpenWeather only has 3-hour weather forecasts available to the public for free, while hourly forecasts are behind a paywall. 
+    """²OpenWeather only has 3-hour weather forecasts available to the public for free, while hourly forecasts are behind a paywall. 
     This means that our app has access to only one forecast for a 3-hour window, for example, from 09:00 to 12:00, not one forecast for each hour. 
     This reduces the accuracy of the automatic predictions. 
-    If you need an accurate prediction for specific known weather conditions, please use the manual prediction option."
+    If you need an accurate prediction for specific known weather conditions, please use the manual prediction option."""
     )
 
 
