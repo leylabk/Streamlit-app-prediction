@@ -18,6 +18,14 @@ from functions_cloud_db import (
     get_predictors
 )
 
+from graphs import (
+    show_hourly_usage,
+    show_monthly_trends,
+    show_temperature_usage,
+    show_city_comparison,
+    show_weather_usage
+)
+
 # Page configuration
 st.set_page_config(
     page_title="CatBoost Prediction",
@@ -42,8 +50,8 @@ st.title("Welcome to the Bike Sharing Demand Prediction App! 🚲")
 
 tab1, tab2, tab3, tab4 = st.tabs(["Home", 
                                   "Dataset Explorer", 
-                                  "Prediction Tool", 
-                                  "Prediction Tool2"])
+                                  "Automatic Prediction Tool", 
+                                  "Manual Prediction Tool"])
 
 with tab1:
     st.write("""
@@ -109,587 +117,135 @@ with tab2:
 
     st.divider()
 
-    # Consistent city colors
-    city_colors = {
-        "Berlin": "#2878B5",
-        "Dresden": "#E58B35",
-        "Köln": "#329B75"
-    }
-
     # First row
     col1, col2 = st.columns(2, gap="large")
 
     with col1:
-        with st.container(border=True):
-            st.subheader("Hourly Usage Patterns")
-            st.caption("Average bike usage throughout the day")
-
-            # Calculate average usage by hour and city
-            hourly_data = (
-                df.groupby(["hour", "city_name"], observed=True)["total_bike_usage"]
-                .mean()
-                .reset_index()
-            )
-            import plotly.express as px
-            # Create chart
-            fig = px.line(
-                hourly_data,
-                x="hour",
-                y="total_bike_usage",
-                color="city_name",
-                markers=True,
-                color_discrete_map=city_colors
-            )
-
-            # Simple line styling
-            fig.update_traces(
-                line=dict(width=2),
-                marker=dict(size=5),
-                hovertemplate="<b>%{y:,.0f}</b><extra></extra>"
-            )
-
-            # Clean layout
-            fig.update_layout(
-                template="plotly_white",
-                xaxis_title="Hour of the Day",
-                yaxis_title="Average Bike Usage",
-                hovermode="x",
-
-                legend=dict(
-                    title=None,
-                    orientation="h",
-                    yanchor="bottom",
-                    y=1.02,
-                    xanchor="left",
-                    x=0,
-                    font=dict(size=11)
-                ),
-
-                margin=dict(l=20, r=20, t=55, b=30),
-                height=400,
-
-                plot_bgcolor="white",
-                paper_bgcolor="white",
-
-                font=dict(
-                    family="Arial",
-                    size=12,
-                    color="#455A64"
-                )
-            )
-
-            # X-axis
-            fig.update_xaxes(
-                tickmode="linear",
-                tick0=0,
-                dtick=2,
-                range=[0, 23],
-                showgrid=False,
-                showline=True,
-                linecolor="#D9DEE3",
-                tickfont=dict(size=11)
-            )
-
-            # Y-axis
-            fig.update_yaxes(
-                showgrid=True,
-                gridcolor="#EAECEF",
-                zeroline=False,
-                showline=False,
-                tickfont=dict(size=11)
-            )
-
-            # Display chart
-            st.plotly_chart(
-                fig,
-                use_container_width=True,
-                config={
-                    "displayModeBar": True,
-                    "scrollZoom": True,
-                    "displaylogo": False,
-                    "modeBarButtonsToRemove": [
-                        "toImage",
-                        "select2d",
-                        "lasso2d"
-                    ]
-                }
-            )
+        show_hourly_usage(df)
 
     with col2:
-
-        with st.container(border=True):
-            st.subheader("Monthly Trends")
-            st.caption("Average bike usage across the year (August–July)")
-
-            import plotly.express as px
-
-            # Define custom month order
-            month_order = [8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7]
-
-            month_labels = [
-                "Aug", "Sep", "Oct", "Nov", "Dec",
-                "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"
-            ]
-
-            month_map = dict(zip(month_order, month_labels))
-
-            # Prepare monthly data
-            monthly_df = df.copy()
-
-            monthly_df["month_label"] = monthly_df["month"].map(month_map)
-
-            monthly_data = (
-                monthly_df.groupby(
-                    ["month_label", "city_name"],
-                    observed=True
-                )["total_bike_usage"]
-                .mean()
-                .reset_index()
-            )
-
-            # Preserve August-July order
-            monthly_data["month_label"] = pd.Categorical(
-                monthly_data["month_label"],
-                categories=month_labels,
-                ordered=True
-            )
-
-            monthly_data = monthly_data.sort_values("month_label")
-
-            # Create interactive chart
-            fig = px.line(
-                monthly_data,
-                x="month_label",
-                y="total_bike_usage",
-                color="city_name",
-                markers=True,
-                color_discrete_map=city_colors,
-                category_orders={"month_label": month_labels}
-            )
-
-            # Line and marker styling
-            fig.update_traces(
-                line=dict(width=2),
-                marker=dict(size=5),
-                hovertemplate="<b>%{y:,.0f}</b><extra></extra>"
-            )
-
-            # Layout styling
-            fig.update_layout(
-                template="plotly_white",
-                xaxis_title="Month",
-                yaxis_title="Average Bike Usage",
-                hovermode="x",
-                clickmode="event",
-
-                legend=dict(
-                    title=None,
-                    orientation="h",
-                    yanchor="bottom",
-                    y=1.02,
-                    xanchor="left",
-                    x=0,
-                    font=dict(size=11)
-                ),
-
-                margin=dict(l=20, r=20, t=55, b=30),
-                height=400,
-
-                plot_bgcolor="white",
-                paper_bgcolor="white",
-
-                font=dict(
-                    family="Arial",
-                    size=12,
-                    color="#455A64"
-                )
-            )
-
-            # X-axis
-            fig.update_xaxes(
-                categoryorder="array",
-                categoryarray=month_labels,
-                showgrid=False,
-                showline=True,
-                linecolor="#D9DEE3",
-                tickfont=dict(size=11)
-            )
-
-            # Y-axis
-            fig.update_yaxes(
-                showgrid=True,
-                gridcolor="#EAECEF",
-                zeroline=False,
-                showline=False,
-                tickfont=dict(size=11)
-            )
-
-            # Display chart
-            st.plotly_chart(
-                fig,
-                use_container_width=True,
-                config={
-                    "displayModeBar": True,
-                    "scrollZoom": True,
-                    "displaylogo": False,
-                    "modeBarButtonsToRemove": [
-                        "toImage",
-                        "select2d",
-                        "lasso2d"
-                    ]
-                }
-            )
+        show_monthly_trends(df)
 
  
     # Second row
     col3, col4 = st.columns(2, gap="large")
 
     with col3:
-        with st.container(border=True):
-            st.subheader("Temperature and Bike Usage")
-            st.caption("Average bike usage across temperature ranges by city")
-
-            import plotly.express as px
-
-            # Group temperature into 15 ranges
-            df_temp = df.copy()
-
-            df_temp["temp_group"] = pd.cut(
-                df_temp["temp"],
-                bins=15
-            )
-
-            # Calculate average usage
-            temp_usage = (
-                df_temp.groupby(
-                    ["temp_group", "city_name"],
-                    observed=True
-                )["total_bike_usage"]
-                .mean()
-                .reset_index()
-            )
-
-            # Calculate temperature midpoint
-            temp_usage["temp_mid"] = temp_usage["temp_group"].apply(
-                lambda x: x.mid
-            )
-
-            # Create interactive chart
-            fig = px.line(
-                temp_usage,
-                x="temp_mid",
-                y="total_bike_usage",
-                color="city_name",
-                markers=True,
-                color_discrete_map=city_colors
-            )
-
-            # Line and marker styling
-            fig.update_traces(
-                line=dict(width=2),
-                marker=dict(size=5),
-                hovertemplate="<b>%{y:,.0f}</b><extra></extra>"
-            )
-
-            # Layout styling
-            fig.update_layout(
-                template="plotly_white",
-                xaxis_title="Temperature",
-                yaxis_title="Average Bike Usage",
-                hovermode="x",
-
-                legend=dict(
-                    title=None,
-                    orientation="h",
-                    yanchor="bottom",
-                    y=1.02,
-                    xanchor="left",
-                    x=0,
-                    font=dict(size=11)
-                ),
-
-                margin=dict(l=20, r=20, t=55, b=30),
-                height=400,
-
-                plot_bgcolor="white",
-                paper_bgcolor="white",
-
-                font=dict(
-                    family="Arial",
-                    size=12,
-                    color="#455A64"
-                )
-            )
-
-            # X-axis
-            fig.update_xaxes(
-                showgrid=False,
-                showline=True,
-                linecolor="#D9DEE3",
-                tickfont=dict(size=11)
-            )
-
-            # Y-axis
-            fig.update_yaxes(
-                showgrid=True,
-                gridcolor="#EAECEF",
-                zeroline=False,
-                showline=False,
-                tickfont=dict(size=11)
-            )
-
-            # Display chart
-            st.plotly_chart(
-                fig,
-                use_container_width=True,
-                config={
-                    "displayModeBar": True,
-                    "scrollZoom": True,
-                    "displaylogo": False,
-                    "modeBarButtonsToRemove": [
-                        "toImage",
-                        "select2d",
-                        "lasso2d"
-                    ]
-                }
-            )
+        show_temperature_usage(df)
 
     with col4:
+        show_city_comparison(df)
 
-        with st.container(border=True):
-            st.subheader("City Comparison")
-            st.caption("Average hourly bike usage by city")
 
-            import plotly.express as px
-
-            # Calculate average usage by city
-            city_usage = (
-                df.groupby("city_name")["total_bike_usage"]
-                .mean()
-                .sort_values(ascending=True)
-                .reset_index()
-            )
-
-            # Create interactive bar chart
-            fig = px.bar(
-                city_usage,
-                x="total_bike_usage",
-                y="city_name",
-                color="city_name",
-                color_discrete_map=city_colors,
-                orientation="h"
-            )
-
-            # Bar styling
-            fig.update_traces(
-                marker_line_width=0,
-                hovertemplate="<b>%{x:,.0f}</b><extra></extra>"
-            )
-
-            # Layout styling
-            fig.update_layout(
-                template="plotly_white",
-                xaxis_title="Average Bike Usage",
-                yaxis_title=None,
-                hovermode="closest",
-                showlegend=False,
-
-                margin=dict(l=20, r=20, t=25, b=35),
-                height=400,
-
-                plot_bgcolor="white",
-                paper_bgcolor="white",
-
-                font=dict(
-                    family="Arial",
-                    size=12,
-                    color="#455A64"
-                )
-            )
-
-            # X-axis
-            fig.update_xaxes(
-                showgrid=True,
-                gridcolor="#EAECEF",
-                zeroline=False,
-                showline=False,
-                tickfont=dict(size=11)
-            )
-
-            # Y-axis
-            fig.update_yaxes(
-                showgrid=False,
-                showline=False,
-                tickfont=dict(size=12),
-                categoryorder="array",
-                categoryarray=city_usage["city_name"].tolist()
-            )
-
-            # Display chart
-            st.plotly_chart(
-                fig,
-                use_container_width=True,
-                config={
-                    "displayModeBar": True,
-                    "scrollZoom": True,
-                    "displaylogo": False,
-                    "modeBarButtonsToRemove": [
-                        "toImage",
-                        "select2d",
-                        "lasso2d"
-                    ]
-                }
-            )
-
-# Third row
+    # Third row
     col5, col6 = st.columns(2, gap="large")
 
-    with st.container(border=True):
-        st.subheader("Temperature, Weather Condition and Bike Usage")
-        st.caption("Average bike usage by city and weather condition")
-
-        import plotly.express as px
-
-        weather_city_usage = (
-            df.groupby(
-                ["city_name", "weather_group"],
-                observed=True
-            )["total_bike_usage"]
-            .mean()
-            .reset_index()
-        )
-
-        # Weather colors
-        weather_colors = {
-            "Clear": "#FF9800",
-            "Clouds": "#78909C",
-            "Rain":"#3949AB",
-            "Drizzle": "#03A9F4",
-            "Snow": "#00BCD4",
-            "Mist": "#E2EAF0",
-            "Fog":"#B8CBD8"
-        }
-
-        # Weather symbols
-        weather_emojis = {
-            "Clear": "☀",
-            "Clouds": "☁",
-            "Rain": "🌧️",
-            "Drizzle": "☂",
-            "Snow": "❄",
-            "Mist": "~",
-            "Fog": "≋"
-        }
-
-        # Add symbols above bars
-        weather_city_usage["weather_symbol"] = (
-            weather_city_usage["weather_group"]
-            .map(weather_emojis)
-        )
-
-        # Create grouped bar chart
-        fig = px.bar(
-            weather_city_usage,
-            x="city_name",
-            y="total_bike_usage",
-            color="weather_group",
-            text="weather_symbol",
-            barmode="group",
-            color_discrete_map=weather_colors,
-            category_orders={
-                "weather_group": list(weather_colors.keys())
-            }
-        )
-
-        # Bar and symbol styling
-        fig.update_traces(
-            marker_line_width=0,
-            textposition="outside",
-            texttemplate="%{text}",
-            textfont=dict(size=20),
-            cliponaxis=False,
-            hovertemplate="<b>%{y:,.0f}</b><extra></extra>"
-        )
-
-        # Match symbol colors with bar colors
-        for trace in fig.data:
-            trace.textfont.color = weather_colors.get(
-                trace.name, "#455A64"
-            )
-            trace.textfont.size = 15 if trace.name == "Rain" else 20
-        # Layout styling
-        max_usage = weather_city_usage["total_bike_usage"].max()
-
-        fig.update_layout(
-            template="plotly_white",
-            xaxis_title=None,
-            yaxis_title="Average Bike Usage",
-            hovermode="closest",
-
-            legend=dict(
-                title="Weather Condition",
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="left",
-                x=0,
-                font=dict(size=11)
-            ),
-
-            bargap=0.2,
-            bargroupgap=0.05,
-
-            margin=dict(l=20, r=20, t=65, b=35),
-            height=480,
-
-            plot_bgcolor="white",
-            paper_bgcolor="white",
-
-            font=dict(
-                family="Arial",
-                size=12,
-                color="#455A64"
-            )
-        )
-
-        # X-axis
-        fig.update_xaxes(
-            showgrid=False,
-            showline=True,
-            linecolor="#D9DEE3",
-            tickfont=dict(size=11)
-        )
-
-        # Y-axis
-        fig.update_yaxes(
-            showgrid=True,
-            gridcolor="#EAECEF",
-            zeroline=False,
-            showline=False,
-            tickfont=dict(size=11),
-            range=[0, max_usage * 1.2]
-        )
-
-        # Display chart
-        st.plotly_chart(
-            fig,
-            use_container_width=True,
-            config={
-                "displayModeBar": True,
-                "scrollZoom": True,
-                "displaylogo": False,
-                "modeBarButtonsToRemove": [
-                    "toImage",
-                    "select2d",
-                    "lasso2d"
-                ]
-            }
-        )
+    show_weather_usage(df)
   
-
-
+        
 
 with tab3:
+
+    st.header("Automatic Bike Demand Prediction")
+
+    st.caption("""
+    - Select a city, date, and time.
+    - Weather and calendar information will be retrieved automatically.
+    - Weather forecasts are available for the next 5 days. Please select a date within this period.
+    """)
+
+    # User selects a city
+    city = st.selectbox(
+        "Select a city",
+        ["Berlin", "Köln", "Dresden"],
+        key="automatic_city"
+    )
+
+    # User selects a date
+    selected_date = st.date_input(
+        "Select a date",
+        value=date.today(),
+        key="automatic_date"
+    )
+
+    # User selects a time
+    selected_time = st.time_input(
+        "Select a time",
+        value=time(12, 0),
+        key="automatic_time"
+    )
+
+    # Combine date and time
+    date_time = datetime.combine(
+        selected_date,
+        selected_time
+    )
+
+        # Prediction button
+    if st.button(
+        "Predict Bike Demand",
+        type="primary",
+        use_container_width=True,
+        key="automatic_predict"
+    ):
+
+        # Function 1: Get city coordinates
+        coordinates = get_city_coordinates(city)
+
+        if coordinates is None:
+            st.error("Coordinates not found for this city.")
+            st.stop()
+
+        lat, lon = coordinates
+
+        # Function 2: Get weather forecast
+        try:
+            selected_forecast = get_weather(
+                lat,
+                lon,
+                date_time,
+                city
+            )
+        except requests.exceptions.RequestException:
+            st.error(
+                "The weather forecast could not be retrieved. "
+                "Please try again later."
+            )
+            st.stop()
+
+        # Check whether a matching forecast exists
+        if selected_forecast.empty:
+            st.warning(
+                "No weather forecast is available for the "
+                "selected date and time. Please choose a "
+                "different date or time."
+            )
+            st.stop()
+
+        # Function 3: Prepare predictors
+        X_new = get_predictors(
+            selected_forecast,
+            date_time
+        )
+
+        # Make prediction with the CatBoost model
+        prediction = model.predict(X_new)
+
+        # Display prediction
+        st.success("Prediction completed!")
+
+        st.metric(
+            label="Predicted hourly bike-sharing demand",
+            value=f"{math.ceil(max(0, prediction[0])):,} trips"
+        )
+
+        # Show model input
+        with st.expander("View Input Data"):
+            st.dataframe(X_new)
+
+
+
+with tab4:
     st.caption(
         "Enter all required input variables manually, "
         "including weather and calendar information, "
@@ -789,103 +345,8 @@ with tab3:
             "snow_1h": snow_1h
         }])
 
-        prediction = model.predict(input_data)
-
-        st.success("Prediction completed!")
-
-        st.metric(
-            label="Predicted value for hourly bicycle usage",
-            value=f"{prediction[0]:,.2f}"
-        )
-
-        with st.expander("View Input Data"):
-            st.dataframe(input_data)
-
-with tab4:
-
-    st.header("Automatic Bike Demand Prediction")
-
-    st.caption(
-        "Select a city, date, and time. Weather and calendar "
-        "information will be retrieved automatically."
-    )
-
-    # User selects a city
-    city = st.selectbox(
-        "Select a city",
-        ["Berlin", "Köln", "Dresden"],
-        key="automatic_city"
-    )
-
-    # User selects a date
-    selected_date = st.date_input(
-        "Select a date",
-        value=date.today(),
-        key="automatic_date"
-    )
-
-    # User selects a time
-    selected_time = st.time_input(
-        "Select a time",
-        value=time(12, 0),
-        key="automatic_time"
-    )
-
-    # Combine date and time
-    date_time = datetime.combine(
-        selected_date,
-        selected_time
-    )
-
-        # Prediction button
-    if st.button(
-        "Predict Bike Demand",
-        type="primary",
-        use_container_width=True,
-        key="automatic_predict"
-    ):
-
-        # Function 1: Get city coordinates
-        coordinates = get_city_coordinates(city)
-
-        if coordinates is None:
-            st.error("Coordinates not found for this city.")
-            st.stop()
-
-        lat, lon = coordinates
-
-        # Function 2: Get weather forecast
-        try:
-            selected_forecast = get_weather(
-                lat,
-                lon,
-                date_time,
-                city
-            )
-        except requests.exceptions.RequestException:
-            st.error(
-                "The weather forecast could not be retrieved. "
-                "Please try again later."
-            )
-            st.stop()
-
-        # Check whether a matching forecast exists
-        if selected_forecast.empty:
-            st.warning(
-                "No weather forecast is available for the "
-                "selected date and time. Please choose a "
-                "different date or time."
-            )
-            st.stop()
-
-        # Function 3: Prepare predictors
-        X_new = get_predictors(
-            selected_forecast,
-            date_time
-        )
-
         # Make prediction with the CatBoost model
-        prediction = model.predict(X_new)
+        prediction = model.predict(input_data)
 
         # Display prediction
         st.success("Prediction completed!")
@@ -897,4 +358,7 @@ with tab4:
 
         # Show model input
         with st.expander("View Input Data"):
-            st.dataframe(X_new)
+            st.dataframe(input_data)
+
+
+
