@@ -46,30 +46,6 @@ Want to see the application in action?
 - MySQL
 - OpenWeatherMap API
 
-## ⚙️ Installation and Setup
-
-**1. Clone the repository**
-
-```bash
-git clone YOUR_REPOSITORY_URL
-cd YOUR_PROJECT_FOLDER
-```
-
-**2. Install dependencies**
-
-```bash
-pip install -r requirements.txt
-```
-
-**3. Configure secrets**
-
-Set up the required database credentials and API keys using Streamlit Secrets.
-
-**4. Run the application**
-
-```bash
-streamlit run app_cloud_db.py
-```
 
 ## 🔐 Configuration
 
@@ -78,21 +54,3 @@ The application may require:
 - An OpenWeatherMap API key.
 
 For security reasons, sensitive credentials and API keys should never be committed to the GitHub repository.
-
-## 🤝 Collaboration
-
-This project supports collaborative development through GitHub.
-
-Contributors can:
-- Create their own forks.
-- Work independently on their copies.
-- Submit Pull Requests to propose changes.
-- Review and merge approved contributions into the main repository.
-
-## 📜 License
-
-No license has been specified yet.
-
-## 📜 License
-
-No license has been specified yet.
