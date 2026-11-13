@@ -508,31 +508,75 @@ with tab5:
             else:
                 st.success("CSV file uploaded successfully!")
 
-                # File overview
-                st.markdown("### File Overview")
 
-                col1, col2, col3 = st.columns(3)
+    # Section 3: Generate predictions
+    with st.container(border=True):
+        st.subheader("3. Generate Predictions")
 
-                with col1:
-                    st.metric(
-                        "Total Scenarios",
-                        batch_data.shape[0]
-                    )
+        if st.button(
+            "Generate Predictions",
+            type="primary",
+            use_container_width=True,
+            key="batch_predict"
+        ):
 
-                with col2:
-                    st.metric(
-                        "Total Features",
-                        batch_data.shape[1]
-                    )
+            required_columns = [
+                "city_name",
+                "weather_group",
+                "working_day",
+                "school_break",
+                "month",
+                "hour",
+                "temp",
+                "humidity",
+                "wind_speed",
+                "rain_1h",
+                "snow_1h"
+            ]
 
-                st.divider()
-
-                # Data preview
-                st.markdown("### Data Preview")
-
-                st.dataframe(
-                    batch_data,
-                    use_container_width=True,
-                    hide_index=True
+            if not all(
+                col in batch_data.columns
+                for col in required_columns
+            ):
+                st.error(
+                    "The uploaded CSV is missing required columns."
                 )
 
+            else:
+                # Prepare model input
+                X_batch = batch_data[required_columns].copy()
+
+                # Make predictions
+                predictions = model.predict(X_batch)
+
+                # Add predictions to results
+                results = batch_data.copy()
+
+                results["predicted_bike_demand"] = [
+                    math.ceil(max(0, value))
+                    for value in predictions
+                ]
+
+                st.success("All predictions completed!")
+
+                st.markdown("### Prediction Results")
+
+                st.dataframe(
+                    results,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=200
+                )
+
+                # Download prediction results
+                results_csv = results.to_csv(
+                    index=False
+                ).encode("utf-8")
+
+                st.download_button(
+                    label="Download Prediction Results",
+                    data=results_csv,
+                    file_name="bike_demand_prediction_results.csv",
+                    mime="text/csv",
+                    use_container_width=True
+                )
