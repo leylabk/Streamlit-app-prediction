@@ -2,7 +2,7 @@
 
 ## 📌 Project Overview
 
-This project aims to predict bike-sharing demand using machine learning algorithms. It uses CatBoost models and various features, including weather conditions and school holidays, to estimate bike rental demand.
+This project aims to predict bike-sharing demand using machine learning algorithms. It uses CatBoost models and various features, including weather conditions and school breaks, to estimate bike rental demand.
 
 ## 🚀 Try the Live App
 
