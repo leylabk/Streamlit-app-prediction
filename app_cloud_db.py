@@ -64,38 +64,25 @@ with tab1:
         We combined bike-sharing data, weather records, time and calendar data from different sources 
         to analyze and predict hourly bike-sharing demand.
 
-        ### Factors Used for Predictions
+        #### Factors Used for Predictions
         - **Weather Factors:** Overall weather conditions (clear, cloudy, rainy, drizzly, foggy, misty), temperature, humidity, wind speed, amount of rainfall and snowfall in the previous hour
         - **Time Factors:** Month and hour of the day
         - **Calendar Factors:** Whether it is working day (vs. a holiday/weekend) and whether it is a school break (Schulferien; vs. regular school time)
         - **Location Factor:** City name (Berlin, Cologne, Dresden)
 
-        ### Target that We Are Predicting
+        #### Target that We Are Predicting
         **Started bike trips:** The number of bike-sharing trips started within each hour. It represents the demand for available ready-to-use bikes that a company needs to prepare.
 
-
-
-        **Data Sources:**
-
+        #### Data Sources
         - **Bike-Sharing Data:** Historical bike-sharing records obtained
-        from the [European Bike Sharing Dataset](https://github.com/tumftm/european-bike-sharing-dataset).
-        - **Weather Data:** Weather information collected using the
-        [OpenWeather API](https://openweathermap.org/api), including temperature, humidity, rainfall,
-        and snowfall.
-        - **Calendar Data:** Working day and school holiday information
-        generated using Python libraries.
-
-        ## Features Used in the Analysis
-        - **Temporal Features:** Year, month, day, and hour.
-        - **Weather Features:** Temperature, humidity, rainfall, and snowfall.
-        - **Calendar Features:** School breaks and working days.
-        - **Location Feature:** City name.
-        - **Weather Categories:** Grouped weather conditions.
-
-        **Target Variable:** `total_bike_usage`
-
-        Represents the total number of bicycles used within each hour.
-        ### What Can You Explore?
+        from the [European Bike Sharing Dataset](https://github.com/tumftm/european-bike-sharing-dataset)
+        - **Weather Data:** Weather records collected using the
+        [OpenWeather API](https://openweathermap.org/api), including temperature, humidity, wind speed, rainfall,
+        and snowfall
+        - **Calendar Data:** Working day information generated using a Python library; school break information taken from the [Schulferien website](https://www.schulferien.org/deutschland/ferien/)
+        
+        
+        ## What Can You Explore?
 
         - **Data Exploration:** Examine the dataset and identify usage patterns.
         - **Data Visualization:** Investigate how weather, time, and calendar
