@@ -48,10 +48,13 @@ with open(BASE_DIR / "catboost_categories_spline.pkl", "rb") as f:
 # Title
 st.title("Welcome to the Bike Sharing Demand Prediction App! 🚲")
 
-tab1, tab2, tab3, tab4 = st.tabs(["Home", 
-                                  "Dataset Explorer", 
-                                  "Automatic Prediction Tool", 
-                                  "Manual Prediction Tool"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "Dashboard",
+    "Analysis",
+    "Automatic Prediction",
+    "Manual Prediction",
+    "Batch Prediction"
+])
 
 with tab1:
     st.write("""
@@ -253,7 +256,29 @@ with tab3:
             label="Predicted hourly bike-sharing demand",
             value=f"{math.ceil(max(0, prediction[0])):,} trips"
         )
+        
+        # Prepare prediction results for download
+        prediction_results = X_new.copy()
 
+        prediction_results["city"] = city
+        prediction_results["date"] = selected_date
+        prediction_results["time"] = selected_time
+        prediction_results["predicted_bike_demand"] = math.ceil(
+            max(0, prediction[0])
+        )
+
+        # Convert results to CSV
+        csv = prediction_results.to_csv(index=False).encode("utf-8")
+
+        # Download button
+        st.download_button(
+            label="Download Prediction (CSV)",
+            data=csv,
+            file_name=f"bike_demand_prediction_{city}_{selected_date}.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+        
         # Show model input
         with st.expander("View Input Data"):
             st.dataframe(X_new)
@@ -370,10 +395,144 @@ with tab4:
             label="Predicted hourly bike-sharing demand",
             value=f"{math.ceil(max(0, prediction[0])):,} trips"
         )
+        
+        # Prepare prediction results for download
+        prediction_results = input_data.copy()
 
+        prediction_results["predicted_bike_demand"] = math.ceil(
+            max(0, prediction[0])
+        )
+
+        # Convert results to CSV
+        csv = prediction_results.to_csv(index=False).encode("utf-8")
+
+        # Download button
+        st.download_button(
+            label="Download Prediction (CSV)",
+            data=csv,
+            file_name=f"bike_demand_prediction_{city_name}_{month}_{hour}.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+        
         # Show model input
         with st.expander("View Input Data"):
             st.dataframe(input_data)
 
+with tab5:
+    st.header("Batch Bike Demand Prediction")
 
+    st.caption(
+        "Generate multiple bike-sharing demand predictions "
+        "by uploading your own input scenarios."
+    )
+
+    st.divider()
+
+    # Section 1: Download template
+    with st.container(border=True):
+        st.subheader("1. Download CSV Template")
+
+        st.write(
+            "Start by downloading our predefined CSV template. "
+            "Fill in your input variables before uploading it."
+        )
+
+        template_columns = [
+            "city_name",
+            "weather_group",
+            "working_day",
+            "school_break",
+            "month",
+            "hour",
+            "temp",
+            "humidity",
+            "wind_speed",
+            "rain_1h",
+            "snow_1h"
+        ]
+
+        template_df = pd.DataFrame(columns=template_columns)
+
+        template_csv = template_df.to_csv(
+            index=False
+        ).encode("utf-8")
+
+        st.download_button(
+            label="Download CSV Template",
+            data=template_csv,
+            file_name="bike_demand_input_template.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+
+    # Section 2: Upload file
+    with st.container(border=True):
+        st.subheader("2. Upload Input Data")
+
+        st.write(
+            "Upload your completed CSV file containing "
+            "multiple bike demand prediction scenarios."
+        )
+
+        uploaded_file = st.file_uploader(
+            "Choose your CSV file",
+            type=["csv"],
+            key="batch_prediction_upload"
+        )
+
+        if uploaded_file is not None:
+
+            try:
+                batch_data = pd.read_csv(
+                    uploaded_file,
+                    encoding="utf-8-sig"
+                )
+
+            except UnicodeDecodeError:
+                uploaded_file.seek(0)
+                batch_data = pd.read_csv(
+                    uploaded_file,
+                    encoding="cp1252"
+                )
+
+            except pd.errors.EmptyDataError:
+                st.error("The uploaded CSV file is empty.")
+                st.stop()
+
+            if batch_data.empty:
+                st.warning(
+                    "The uploaded CSV contains no prediction scenarios."
+                )
+
+            else:
+                st.success("CSV file uploaded successfully!")
+
+                # File overview
+                st.markdown("### File Overview")
+
+                col1, col2, col3 = st.columns(3)
+
+                with col1:
+                    st.metric(
+                        "Total Scenarios",
+                        batch_data.shape[0]
+                    )
+
+                with col2:
+                    st.metric(
+                        "Total Features",
+                        batch_data.shape[1]
+                    )
+
+                st.divider()
+
+                # Data preview
+                st.markdown("### Data Preview")
+
+                st.dataframe(
+                    batch_data,
+                    use_container_width=True,
+                    hide_index=True
+                )
 
