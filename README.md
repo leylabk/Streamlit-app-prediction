@@ -8,7 +8,7 @@ This project aims to predict bike-sharing demand using machine learning algorith
 
 Want to see the application in action?
 
-👉 **[Click here to open the live application](https://app-app-prediction-q9pktrdwottfwhmurtqcsn.streamlit.app/)**
+👉 **[Click here to open the application](https://app-app-prediction-q9pktrdwottfwhmurtqcsn.streamlit.app/)**
 
 ## 📂 Repository Structure
 
