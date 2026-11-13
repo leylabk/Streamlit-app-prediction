@@ -44,6 +44,7 @@ Want to see the application in action?
 - Pandas
 - Scikit-learn
 - MySQL
+- Railway (cloud-hosted MySQL database)
 - OpenWeatherMap API
 
 
