@@ -1,430 +1,227 @@
-
-import streamlit as st
-import pandas as pd
-import pickle
-from pathlib import Path
-from sklearn.preprocessing import SplineTransformer
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-from datetime import datetime, date, time
 import requests
-import math
+import pandas as pd
+import streamlit as st
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import make_url
+import holidays
 
-from functions_cloud_db import (
-    get_city_coordinates,
-    get_dataset,
-    get_weather,
-    get_predictors
-)
 
-from graphs import (
-    show_hourly_usage,
-    show_monthly_trends,
-    show_temperature_usage,
-    show_city_comparison,
-    show_weather_usage
-)
+from school_holidays import school_holidays #this is my .py file, not a package, it has a dictionary with school holidays in Germany
 
-# Page configuration
-st.set_page_config(
-    page_title="CatBoost Prediction",
-    page_icon="📊",
-    layout="wide"
-)
 
-# Load dataset from Railway
-df = get_dataset()
+#============================
+# Function 1
+# Get city coordinates for the city defined by the user
+#============================
+@st.cache_data(ttl=3600) #this is needed to store the coordinates of a given city for 1 hour, so that we don't have to fetch every time
+def get_city_coordinates(city):
 
-# Upload models and categories
-BASE_DIR = Path(__file__).parent
+    engine = get_db_engine()
 
-with open(BASE_DIR / "catboost_model_spline.pkl", "rb") as f:
-    model = pickle.load(f)
-
-with open(BASE_DIR / "catboost_categories_spline.pkl", "rb") as f:
-    categories = pickle.load(f)
-
-# Title
-st.title("Welcome to the Bike Sharing Demand Prediction App! 🚲")
-
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "Dashboard",
-    "Analysis",
-    "Automatic Prediction",
-    "Manual Prediction",
-    "Batch Prediction"
-])
-
-with tab1:
-    st.write("""
-        ### About the Project
-        This project aims to analyze and predict hourly bike-sharing demand based on various temporal, weather-related, and calendar features. 
-        By exploring historical bike usage data, we investigate how different factors influence bicycle rental patterns across cities.
-
-        ### About the Dataset
-        This project combines bike-sharing, weather, and calendar data
-        from different sources to analyze and predict hourly bicycle usage.
-        This project combines bike-sharing, weather, and calendar data
-        from different sources to analyze and predict hourly bicycle usage.
-
-        **Data Sources:**
-
-        - **Bike-Sharing Data:** Historical bike-sharing records obtained
-        from the [European Bike Sharing Dataset](https://github.com/tumftm/european-bike-sharing-dataset).
-        - **Weather Data:** Weather information collected using the
-        [OpenWeather API](https://openweathermap.org/api), including temperature, humidity, rainfall,
-        and snowfall.
-        - **Calendar Data:** Working day and school holiday information
-        generated using Python libraries.
-
-        ## Features Used in the Analysis
-        - **Temporal Features:** Year, month, day, and hour.
-        - **Weather Features:** Temperature, humidity, rainfall, and snowfall.
-        - **Calendar Features:** School breaks and working days.
-        - **Location Feature:** City name.
-        - **Weather Categories:** Grouped weather conditions.
-
-        **Target Variable:** `total_bike_usage`
-
-        Represents the total number of bicycles used within each hour.
-        ### What Can You Explore?
-
-        - **Data Exploration:** Examine the dataset and identify usage patterns.
-        - **Data Visualization:** Investigate how weather, time, and calendar
-        factors affect bicycle demand.
-        - **Model Insights:** Explore the performance and important features
-        of the selected CatBoost model.
-        - **Demand Prediction:** Estimate hourly bicycle usage based on
-        selected conditions.
-
-        ### Explore the App!
-        Navigate through the pages to explore bike-sharing patterns, 
-        gain insights into the factors influencing bicycle usage, 
-        and predict hourly bike-sharing demand using our best-performing CatBoost model.
+    query = text("""
+        SELECT
+            name,
+            lon,
+            lat
+        FROM cities
+        WHERE name = :city;
     """)
 
-    st.caption(
-    "Dataset source: Waldner et al. (2025), "
-    "Data-Driven Insights into (E-)Bike-Sharing, Transportation. "
-    "Licensed under CC BY-NC 4.0."
+    with engine.connect() as connection:
+        city_coordinates = pd.read_sql(
+            query,
+            connection,
+            params={"city": city}
+        )
+    
+    if city_coordinates.empty:
+        return None
+
+    lat = float(city_coordinates["lat"].iloc[0])
+    lon = float(city_coordinates["lon"].iloc[0])
+
+    return lat, lon
+
+@st.cache_resource
+def get_db_engine():
+    # Get the Railway connection URL from Streamlit secrets
+    railway_url = st.secrets["MYSQL_PUBLIC_URL"]
+
+    # Convert the URL to a SQLAlchemy-compatible format
+    db_url = make_url(railway_url)
+    db_url = db_url.set(drivername="mysql+pymysql")
+
+    # Create the database engine
+    engine = create_engine(
+        db_url,
+        pool_pre_ping=True
     )
 
+    return engine
 
-with tab2:
-    st.title("Data Visualization")
-    st.markdown(
-        "Explore bike-sharing patterns across different "
-        "cities, hours, months, and temperature conditions."
-    )
+#=====================================
+# Function 2
+# Get the final dataset for vizualisations and summary stats
+#======================================
 
-    st.divider()
+@st.cache_data(ttl=3600)
+def get_dataset():
+    engine = get_db_engine()
 
-    # First row
-    col1, col2 = st.columns(2, gap="large")
-
-    with col1:
-        show_hourly_usage(df)
-
-    with col2:
-        show_monthly_trends(df)
-
- 
-    # Second row
-    col3, col4 = st.columns(2, gap="large")
-
-    with col3:
-        show_temperature_usage(df)
-
-    with col4:
-        show_city_comparison(df)
-
-
-    # Third row
-    col5, col6 = st.columns(2, gap="large")
-
-    show_weather_usage(df)
-  
-        
-
-with tab3:
-
-    st.header("Automatic Bike Demand Prediction")
-
-    st.caption("""
-    - Select a city, date, and time.
-    - Weather and calendar information will be retrieved automatically.
-    - Weather forecasts are available for the next 5 days. Please select a date within this period.
+    query = text("""
+        SELECT *
+        FROM dataset_final;
     """)
 
-    # User selects a city
-    city = st.selectbox(
-        "Select a city",
-        ["Berlin", "Köln", "Dresden"],
-        key="automatic_city"
-    )
+    with engine.connect() as connection:
+        df = pd.read_sql(query, connection)
 
-    # User selects a date
-    selected_date = st.date_input(
-        "Select a date",
-        value=date.today(),
-        key="automatic_date"
-    )
-
-    # User selects a time
-    selected_time = st.time_input(
-        "Select a time",
-        value=time(12, 0),
-        key="automatic_time"
-    )
-
-    # Combine date and time
-    date_time = datetime.combine(
-        selected_date,
-        selected_time
-    )
-
-        # Prediction button
-    if st.button(
-        "Predict Bike Demand",
-        type="primary",
-        use_container_width=True,
-        key="automatic_predict"
-    ):
-
-        # Function 1: Get city coordinates
-        coordinates = get_city_coordinates(city)
-
-        if coordinates is None:
-            st.error("Coordinates not found for this city.")
-            st.stop()
-
-        lat, lon = coordinates
-
-        # Function 2: Get weather forecast
-        try:
-            selected_forecast = get_weather(
-                lat,
-                lon,
-                date_time,
-                city
-            )
-        except requests.exceptions.RequestException:
-            st.error(
-                "The weather forecast could not be retrieved. "
-                "Please try again later."
-            )
-            st.stop()
-
-        # Check whether a matching forecast exists
-        if selected_forecast.empty:
-            st.warning(
-                "No weather forecast is available for the "
-                "selected date and time. Please choose a "
-                "different date or time."
-            )
-            st.stop()
-
-        # Function 3: Prepare predictors
-        X_new = get_predictors(
-            selected_forecast,
-            date_time
-        )
-
-        # Make prediction with the CatBoost model
-        prediction = model.predict(X_new)
-
-        # Display prediction
-        st.success("Prediction completed!")
-
-        st.metric(
-            label="Predicted hourly bike-sharing demand",
-            value=f"{math.ceil(max(0, prediction[0])):,} trips"
-        )
-
-        # Prepare prediction results for download
-        prediction_results = X_new.copy()
-
-        prediction_results["city"] = city
-        prediction_results["date"] = selected_date
-        prediction_results["time"] = selected_time
-        prediction_results["predicted_bike_demand"] = math.ceil(
-            max(0, prediction[0])
-        )
-
-        # Convert results to CSV
-        csv = prediction_results.to_csv(index=False).encode("utf-8")
-
-        # Download button
-        st.download_button(
-            label="Download Prediction (CSV)",
-            data=csv,
-            file_name=f"bike_demand_prediction_{city}_{selected_date}.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
-
-        # Show model input
-        with st.expander("View Input Data"):
-            st.dataframe(X_new)
+    return df
 
 
 
-with tab4:
-    st.caption(
-        "Enter all required input variables manually, "
-        "including weather and calendar information, "
-        "to predict hourly bike-sharing demand."
-    )
-# User inputs
-    st.subheader("Categorical Features")
-    col1, col2 = st.columns(2)
+#==========================================
+# Function 3
+# Get weather forecast for the date and time defined by user
+#==========================================
 
-    with col1:
-        city_name = st.selectbox(
-            "City",
-            categories["city_name"]
-        )
+def get_weather(lat, lon, date_time, city_name):
+    api_key_weather = get_api_key()
+    weather_json = get_weather_json(lat, lon, api_key_weather)
+    weather_df = get_weather_df(weather_json, city_name)
+    selected_forecast = select_forecast(date_time, weather_df)
+    return selected_forecast
 
-        weather_group = st.selectbox(
-            "Weather Group",
-            categories["weather_group"]
-        )
+def get_api_key():
+    api_key_weather = st.secrets["API_KEY_WEATHER_NEW"] #this uses the toml file with the password, not .env
+    return api_key_weather 
 
-        
-    with col2:
-        working_day = st.selectbox(
-                "Working Day",
-                categories["working_day"]
-            )
-        school_break = st.selectbox(
-            "School Break",
-            categories["school_break"]
-        )
+def get_weather_json(lat, lon, api_key_weather):
+    weather_request = requests.get(f"https://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&units=metric&appid={api_key_weather}", timeout=15)
+    weather_request.raise_for_status()
+    weather_json = weather_request.json()
+    return weather_json
 
-        # month = st.selectbox(
-        # "Month",
-        # categories["month"]
-        # )
+def get_weather_df(weather_json, city_name):
+    # Create an empty list to store observations
+    weather_data = []
 
-        # hour = st.selectbox(
-        # "Hour",
-        # categories["hour"]
-        # )
+    # Loop through each forecast
+    for forecast in weather_json["list"]:
 
-    st.divider()
-
-    st.subheader("Time Features")
-
-    col3, col4 = st.columns(2)
-
-    with col3:
-        month = st.number_input(
-            "Month",
-            min_value=1,
-            max_value=12,
-            value=1,
-            step=1
-        )
-
-    with col4:
-        hour = st.number_input(
-            "Hour",
-            min_value=0,
-            max_value=23,
-            value=12,
-            step=1
-        )
-
-    st.divider()
-
-    st.subheader("Weather Measurements")
-
-    col5, col6 = st.columns(2)
-
-    with col5:
-        temp = st.number_input("Temperature", value=20.0)
-        humidity = st.number_input("Humidity", value=50.0)
-        wind_speed = st.number_input("Wind Speed", value=0.0)
-
-    with col6:
-        rain_1h = st.number_input("Rain (1h)", value=0.0)
-        snow_1h = st.number_input("Snow (1h)", value=0.0)
-
-    st.divider()
-
-    # Prediction
-    if st.button("Predict", type="primary", use_container_width=True):
-
-        input_data = pd.DataFrame([{
+        row = {
             "city_name": city_name,
-            "weather_group": weather_group,
-            "working_day": working_day,
-            "school_break": school_break,
-            "month": month,
-            "hour": hour,
-            "temp": temp,
-            "humidity": humidity,
-            "wind_speed": wind_speed,
-            "rain_1h": rain_1h,
-            "snow_1h": snow_1h
-        }])
+            "city_observation_station": weather_json["city"]["name"],
+            "dt": forecast["dt"],
+            "dt_txt_utc": forecast["dt_txt"],
+            "timezone": weather_json["city"]["timezone"],
+            "temp": forecast["main"]["temp"],
+            "humidity": forecast["main"]["humidity"],
+            "wind_speed": forecast["wind"]["speed"],
+            "rain_3h": forecast.get("rain", {}).get("3h", 0),
+            "snow_3h": forecast.get("snow", {}).get("3h", 0),
+            "weather_main": forecast["weather"][0]["main"]
+        }
 
-        # Make prediction with the CatBoost model
-        prediction = model.predict(input_data)
+        # Add the observation to the list
+        weather_data.append(row)
 
-        # Display prediction
-        st.success("Prediction completed!")
+    # Convert the list of dictionaries into a DataFrame
+    weather_df = pd.DataFrame(weather_data)
 
-        st.metric(
-            label="Predicted hourly bike-sharing demand",
-            value=f"{math.ceil(max(0, prediction[0])):,} trips"
-        )
-        # Prepare prediction results for download
-        prediction_results = input_data.copy()
+    #Add the forecast_start column
+    weather_df["forecast_start_time_berlin"] = (
+    pd.to_datetime(weather_df["dt"], unit="s", utc=True)
+    .dt.tz_convert("Europe/Berlin"))
 
-        prediction_results["predicted_bike_demand"] = math.ceil(
-            max(0, prediction[0])
-        )
+    #Add the forecast_end column
+    weather_df["forecast_end_time_berlin"] = (
+    weather_df["forecast_start_time_berlin"] + pd.Timedelta(hours=3))
 
-        # Convert results to CSV
-        csv = prediction_results.to_csv(index=False).encode("utf-8")
+    #Convert weather_main into weather_group
+    weather_df["weather_group"] = weather_df["weather_main"].where(
+    ~weather_df["weather_main"].str.contains("Thunderstorm", na=False),
+    "Rain")
 
-        # Download button
-        st.download_button(
-            label="Download Prediction (CSV)",
-            data=csv,
-            file_name=f"bike_demand_prediction_{city_name}_{month}_{hour}.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
-        # Show model input
-        with st.expander("View Input Data"):
-            st.dataframe(input_data)
+    #Create rain_1h column based on rain_3h column
+    weather_df["rain_1h"] = weather_df["rain_3h"]/3
+
+    #Create snow_1h column based on snow_3h column
+    weather_df["snow_1h"] = weather_df["snow_3h"]/3
+
+    return weather_df
+
+def select_forecast(date_time, weather_df):
+    user_datetime = pd.Timestamp(date_time).tz_localize("Europe/Berlin")
+    
+    selected_forecast = weather_df[
+    (weather_df["forecast_start_time_berlin"] <= user_datetime) &
+    (weather_df["forecast_end_time_berlin"] > user_datetime)]
+
+    return selected_forecast
 
 
+#==============================
+# Function 4
+# Tranform selected forecast into the predictors for the model
+# (add month and hour, school_break, and working_day)
+#===============================
 
-with tab5:
-    st.header("Batch Bike Demand Prediction")
+def get_predictors(selected_forecast, date_time):
 
-    st.caption(
-        "Upload a CSV file containing multiple input scenarios "
-        "to generate several bike demand predictions at once."
+    selected_forecast = selected_forecast.copy()
+
+    #Month and hour 
+    user_datetime = pd.Timestamp(date_time).tz_localize("Europe/Berlin")
+    selected_forecast["month"] = user_datetime.month
+    selected_forecast["hour"] = user_datetime.hour
+
+
+    #Working_day
+    # Map cities to German federal states
+    state_mapping = {
+        "Berlin": "BE",
+        "Köln": "NW",
+        "Dresden": "SN"
+    }
+    # Get the city selected by the user
+    city = selected_forecast["city_name"].iloc[0]
+    # Get the corresponding federal state
+    state = state_mapping[city]
+    # Get German public holidays for the selected year and state
+    public_holidays = holidays.Germany(
+        years=user_datetime.year,
+        subdiv=state
     )
+    # Check whether the selected date is a weekday and not a holiday
+    is_working_day = (
+        user_datetime.weekday() < 5 #Mon is 0, Tue is 1 and so on
+        and user_datetime.date() not in public_holidays
+    )
+    # Add the column
+    selected_forecast["working_day"] = int(is_working_day)
 
 
-    st.divider()
+    #School_break
+    # Extract the date selected by the user
+    user_date = user_datetime.date()
+    # Check whether the date falls within any school holiday period
+    is_school_break = any(
+        pd.Timestamp(start).date() <= user_date <= pd.Timestamp(end).date()
+        for start, end in school_holidays[city]
+    )
+    # Add the column
+    selected_forecast["school_break"] = int(is_school_break)
 
-    st.subheader("Download CSV Template")
 
-    # Define required input columns
-    template_columns = [
+    #Finally, choose only necessary columns from the resulting df
+    model_features = [
         "city_name",
+        "month",
+        "hour",
         "weather_group",
         "working_day",
         "school_break",
-        "month",
-        "hour",
         "temp",
         "humidity",
         "wind_speed",
@@ -432,36 +229,6 @@ with tab5:
         "snow_1h"
     ]
 
-    # Create an empty CSV template
-    template_df = pd.DataFrame(columns=template_columns)
+    X_new = selected_forecast[model_features]
 
-    template_csv = template_df.to_csv(index=False).encode("utf-8")
-
-    st.download_button(
-        label="Download CSV Template",
-        data=template_csv,
-        file_name="bike_demand_input_template.csv",
-        mime="text/csv",
-        use_container_width=True
-    )
-
-    st.subheader("Upload Input Data")
-
-    st.write(
-        "Upload a CSV file containing multiple bike demand "
-        "prediction scenarios."
-    )
-
-    uploaded_file = st.file_uploader(
-        "Choose a CSV file",
-        type=["csv"],
-        key="batch_prediction_upload"
-    )
-
-    if uploaded_file is not None:
-        batch_data = pd.read_csv(uploaded_file, encoding="cp1252")
-
-        st.success("CSV file uploaded successfully!")
-
-        st.write("Preview of uploaded data:")
-        st.dataframe(batch_data, use_container_width=True)
+    return X_new
