@@ -56,9 +56,11 @@ tab1, tab2, tab3, tab4 = st.tabs(["Home",
 with tab1:
     st.write("""
         ## About the App
-        This app predicts hourly bike-sharing demand in Berlin, Dresden and Cologne based on weather and time. 
-        We trained a machine learning model on past bike-sharing data from these cities from years 2022-2023 (on up to 2M trips per city) 
-        so now you can estimate the demand for a future date – this way, your company can prepare enough bikes to keep your customers happy!
+        This app predicts hourly bike-sharing demand in Berlin, Dresden, and Cologne based on weather and time. 
+        
+        We trained a machine learning model on past bike-sharing data from these cities from years 2022-2023  – on up to 2M trips per city.
+        
+        So now you can estimate the demand for a future date – this way, your company can prepare enough bikes to keep your customers happy!
 
         ### About the Dataset
         This project combines bike-sharing, weather, and calendar data
