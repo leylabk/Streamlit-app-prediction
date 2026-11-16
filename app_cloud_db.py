@@ -49,8 +49,8 @@ with open(BASE_DIR / "catboost_categories_spline.pkl", "rb") as f:
 st.title("Welcome to the Bike Sharing Demand Prediction App! 🚲")
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "Dashboard",
-    "Analysis",
+    "Homepage",
+    "Data Visualization",
     "Automatic Prediction",
     "Manual Prediction",
     "Batch Prediction"
