@@ -184,11 +184,10 @@ with tab3:
 
         st.caption(
             "Select a city, date and time to predict "
-            "bike-sharing demand for one scenario."
+            "bike-sharing demand for a single time point."
         )
         st.info(
-            "Weather forecasts are available for the next 5 days. "
-            "The exact available forecast times depend on the weather API."
+            "Weather forecast data is available for the next 5 days (120 hours)."
         )
 
         city = st.selectbox(
