@@ -129,8 +129,9 @@ with tab1:
 with tab2:
     st.title("Data Visualization")
     st.markdown(
-        "Explore bike-sharing patterns across different "
-        "cities, hours, months, and temperature conditions."
+        "Explore bike-sharing demand across different "
+        "cities, hours, months, and weather conditions."   
+        "Bike-sharing demand means the number of started bike-sharing trips within each hour."
     )
 
     st.divider()
