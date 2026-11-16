@@ -48,6 +48,7 @@ def show_hourly_usage(df):
             yaxis_title="Average Bike-Sharing Demand",
             hovermode="x",
             height=400,
+            margin=dict(l=20, r=20, t=55, b=30),
             
             legend=dict(
             title=None,
@@ -71,7 +72,9 @@ def show_hourly_usage(df):
             tick0=0,
             dtick=2,
             range=[0, 23],
-            showgrid=False
+            showgrid=False, 
+            showline=True,
+            linecolor="#EAECEF"
         )
 
         fig.update_yaxes(
@@ -316,7 +319,8 @@ def show_temperature_usage(df):
             gridcolor="#EAECEF",
             zeroline=False,
             showline=False,
-            tickfont=dict(size=11)
+            tickfont=dict(size=11), 
+            rangemode="tozero"
         )
 
         # Display chart
