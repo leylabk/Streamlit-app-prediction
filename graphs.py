@@ -15,7 +15,7 @@ def show_hourly_usage(df):
     with st.container(border=True):
 
         st.subheader("Hourly Usage Patterns")
-        st.caption("Average bike usage throughout the day")
+        st.caption("Average bike-sharing demand throughout the day")
 
         hourly_data = (
             df.groupby(
@@ -44,7 +44,7 @@ def show_hourly_usage(df):
         fig.update_layout(
             template="plotly_white",
             xaxis_title="Hour of the Day",
-            yaxis_title="Average Bike Usage",
+            yaxis_title="Average Bike-Sharing Demand",
             hovermode="x",
             height=400
         )
