@@ -214,7 +214,7 @@ with tab3:
         )
 
         if st.button(
-            "Predict Bike Demand",
+            "Generate Predictions",
             type="primary",
             use_container_width=True,
             key="automatic_predict"
@@ -572,7 +572,7 @@ with tab3:
             # BATCH PREDICTION
 
             if st.button(
-                "Predict All Entries",
+                "Generate Predictions",
                 type="primary",
                 use_container_width=True,
                 key="manual_automatic_batch_predict"
@@ -682,7 +682,7 @@ with tab3:
                         f"{len(results)} predictions completed successfully!"
                     )
 
-                    st.subheader("Batch Prediction Results")
+                    st.markdown("**Prediction Results**")
 
                     st.dataframe(
                         results_df,
@@ -847,7 +847,7 @@ with tab4:
         st.divider()
 
         if st.button(
-            "Predict",
+            "Generate Predictions",
             type="primary",
             use_container_width=True,
             key="individual_manual_predict"
@@ -876,7 +876,7 @@ with tab4:
             st.success("Prediction completed!")
 
             st.metric(
-                label="Predicted hourly bike-sharing demand",
+                label="Predicted Hourly Bike-Sharing Demand",
                 value=f"{predicted_demand:,} trips"
             )
 
@@ -886,19 +886,32 @@ with tab4:
                 predicted_demand
             )
 
+            st.markdown("**Prediction Results**")
+
+            with st.expander(
+                "View Input and Prediction Data",
+                expanded=True
+            ):
+                st.dataframe(
+                    prediction_results,
+                    use_container_width=True,
+                    hide_index=True
+                )
+
             csv = prediction_results.to_csv(
                 index=False
-            ).encode("utf-8")
+            ).encode("utf-8-sig")
 
             st.download_button(
-                label="Download Prediction (CSV)",
+                label="Download Prediction Results",
                 data=csv,
                 file_name=(
                     f"bike_demand_prediction_"
                     f"{city_name}_{month}_{hour}.csv"
                 ),
                 mime="text/csv",
-                use_container_width=True
+                use_container_width=True,
+                key="individual_manual_download"
             )
 
             with st.expander("View Input Data"):
@@ -917,77 +930,99 @@ with tab4:
             "by uploading your own input entries."
         )
 
-        # Download CSV template
-        with st.expander("Download CSV Template"):
-            st.write(
-                "Download the CSV template containing example entries. "
-                "You can modify the example rows or add new entries "
-                "before uploading the file."
-            )
+        # Prepare CSV template
+        template_columns = [
+            "city_name",
+            "weather_group",
+            "working_day",
+            "school_break",
+            "month",
+            "hour",
+            "temp",
+            "humidity",
+            "wind_speed",
+            "rain_1h",
+            "snow_1h"
+        ]
 
-            template_columns = [
-                "city_name",
-                "weather_group",
-                "working_day",
-                "school_break",
-                "month",
-                "hour",
-                "temp",
-                "humidity",
-                "wind_speed",
-                "rain_1h",
-                "snow_1h"
-            ]
-            template_data = [
-                ["Berlin", "Clear", 1, 0, 5, 8, 18.0, 55, 3.2, 0.0, 0.0],
-                ["Hamburg", "Rain", 1, 0, 10, 17, 12.0, 85, 5.5, 1.2, 0.0],
-                ["Munich", "Clouds", 0, 1, 12, 14, 4.0, 70, 2.0, 0.0, 0.0]
-            ]
-            template_df = pd.DataFrame(
-                template_data,
-                columns=template_columns
-            )
+        template_data = [
+            ["Berlin", "Clear", 1, 0, 5, 8, 18.0, 55, 3.2, 0.0, 0.0],
+            ["Hamburg", "Rain", 1, 0, 10, 17, 12.0, 85, 5.5, 1.2, 0.0],
+            ["Munich", "Clouds", 0, 1, 12, 14, 4.0, 70, 2.0, 0.0, 0.0]
+        ]
 
-            template_csv = template_df.to_csv(
-                index=False
-            ).encode("utf-8")
-
-            st.download_button(
-                label="Download CSV Template",
-                data=template_csv,
-                file_name="bike_demand_input_template.csv",
-                mime="text/csv",
-                use_container_width=True
-            )
-
-        st.divider()
-
-        # Upload CSV file
-        st.markdown("**Upload Input Data**")
-
-        uploaded_file = st.file_uploader(
-            "Choose your CSV file",
-            type=["csv"],
-            key="batch_prediction_upload"
+        template_df = pd.DataFrame(
+            template_data,
+            columns=template_columns
         )
 
+        template_csv = template_df.to_csv(
+            index=False
+        ).encode("utf-8")
+
+        # Download and Upload side by side
+        col1, col2 = st.columns(2, gap="medium")
+
+        with col1:
+            with st.container(border=True, height=210):
+                st.markdown("**Download CSV Template**")
+
+                st.caption(
+                    "Download the CSV template with example entries."
+                )
+
+                st.download_button(
+                    label="Download CSV Template",
+                    data=template_csv,
+                    file_name="bike_demand_input_template.csv",
+                    mime="text/csv",
+                    use_container_width=True,
+                    key="batch_template_download"
+                )
+
+        with col2:
+            with st.container(border=True, height=210):
+                st.markdown("**Upload Input Data**")
+
+                st.caption(
+                    "Upload your completed CSV file."
+                )
+
+                uploaded_file = st.file_uploader(
+                    "Choose your CSV file",
+                    type=["csv"],
+                    key="batch_prediction_upload",
+                    label_visibility="collapsed"
+                )
+
+        st.info(
+            "You can modify the example entries or add new entries "
+            "before uploading your CSV file."
+        )
+
+        # Read uploaded CSV
         if uploaded_file is not None:
 
             try:
-                batch_data = pd.read_csv(
-                    uploaded_file,
-                    encoding="utf-8-sig"
-                )
+                try:
+                    batch_data = pd.read_csv(
+                        uploaded_file,
+                        encoding="utf-8-sig"
+                    )
 
-            except UnicodeDecodeError:
-                uploaded_file.seek(0)
-                batch_data = pd.read_csv(
-                    uploaded_file,
-                    encoding="cp1252"
-                )
+                except UnicodeDecodeError:
+                    uploaded_file.seek(0)
+                    batch_data = pd.read_csv(
+                        uploaded_file,
+                        encoding="cp1252"
+                    )
 
             except pd.errors.EmptyDataError:
                 st.error("The uploaded CSV file is empty.")
+                batch_data = None
+
+            except Exception as e:
+                st.error(f"Could not read the uploaded CSV file: {e}")
                 batch_data = None
 
             if batch_data is not None:
@@ -1005,7 +1040,6 @@ with tab4:
 
                     st.divider()
 
-                    # Generate batch predictions
                     if st.button(
                         "Generate Predictions",
                         type="primary",
@@ -1040,43 +1074,46 @@ with tab4:
                             )
 
                         else:
-                            X_batch = batch_data[
-                                required_columns
-                            ].copy()
+                            try:
+                                X_batch = batch_data[
+                                    required_columns
+                                ].copy()
 
-                            predictions = model.predict(X_batch)
+                                predictions = model.predict(X_batch)
 
-                            results = batch_data.copy()
+                                results = batch_data.copy()
 
-                            results["predicted_bike_demand"] = [
-                                math.ceil(max(0, value))
-                                for value in predictions
-                            ]
+                                results["predicted_bike_demand"] = [
+                                    math.ceil(max(0, value))
+                                    for value in predictions
+                                ]
 
-                            st.success(
-                                f"All {len(results)} predictions "
-                                "completed successfully!"
-                            )
+                                st.success(
+                                    f"All {len(results)} predictions "
+                                    "completed successfully!"
+                                )
 
-                            st.markdown("**Prediction Results**")
+                                st.markdown("**Prediction Results**")
 
-                            st.dataframe(
-                                results,
-                                use_container_width=True,
-                                hide_index=True,
-                                height=200
-                            )
+                                st.dataframe(
+                                    results,
+                                    use_container_width=True,
+                                    hide_index=True,
+                                    height=200
+                                )
 
-                            results_csv = results.to_csv(
-                                index=False
-                            ).encode("utf-8")
+                                results_csv = results.to_csv(
+                                    index=False
+                                ).encode("utf-8")
 
-                            st.download_button(
-                                label="Download Prediction Results",
-                                data=results_csv,
-                                file_name=(
-                                    "bike_demand_prediction_results.csv"
-                                ),
-                                mime="text/csv",
-                                use_container_width=True
-                            )
+                                st.download_button(
+                                    label="Download Prediction (CSV)",
+                                    data=results_csv,
+                                    file_name="bike_demand_prediction_results.csv",
+                                    mime="text/csv",
+                                    use_container_width=True,
+                                    key="batch_results_download"
+                                )
+
+                            except Exception as e:
+                                st.error(f"Prediction failed: {e}")
