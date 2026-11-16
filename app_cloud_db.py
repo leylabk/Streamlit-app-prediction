@@ -276,6 +276,8 @@ with tab3:
                     "weather": weather_row["weather_group"],
                     "rain_1h_mm": weather_row["rain_1h"],
                     "snow_1h_mm": weather_row["snow_1h"],
+                    "working_day": X_new.iloc[0]["working_day"],
+                    "school_break": X_new.iloc[0]["school_break"],
                     "predicted_bike_demand": predicted_demand
                 }])
 
@@ -294,7 +296,7 @@ with tab3:
                     use_container_width=True
                 )
 
-                with st.expander("View Prediction and Weather Data"):
+                with st.expander("View Input and Prediction Data"):
                     st.dataframe(
                         prediction_results,
                         use_container_width=True
