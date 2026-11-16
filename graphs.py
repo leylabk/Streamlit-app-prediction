@@ -46,7 +46,23 @@ def show_hourly_usage(df):
             xaxis_title="Hour of the Day",
             yaxis_title="Average Bike-Sharing Demand",
             hovermode="x",
-            height=400
+            height=400,
+            
+            legend=dict(
+            title=None,
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="left",
+            x=0,
+            font=dict(size=11)
+            ),
+
+            font=dict(
+            family="Arial",
+            size=12,
+            color="#455A64"
+            )
         )
 
         fig.update_xaxes(
@@ -79,7 +95,8 @@ def show_monthly_trends(df):
     with st.container(border=True):
 
         st.subheader("Monthly Patterns")
-        st.caption("""Average bike-sharing across the year      (August 2022 – July 2023)""")
+        st.caption("""Average bike-sharing demand throughout the year        
+        (August 2022 – July 2023)""")
 
         # Define custom month order
         month_order = [8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7]
@@ -426,7 +443,7 @@ def show_weather_usage(df):
     with st.container(border=True):
 
         st.subheader("Temperature, Weather Conditions and Bike-Sharing Demand")
-        st.caption("Average bike-sharing demans by weather condition")
+        st.caption("Average bike-sharing demand by weather condition")
 
         weather_city_usage = (
             df.groupby(
