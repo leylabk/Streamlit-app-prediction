@@ -8,6 +8,7 @@ import holidays
 
 from school_holidays import school_holidays #this is my .py file, not a package, it has a dictionary with school holidays in Germany
 
+from datetime import datetime
 
 #============================
 # Function 1
@@ -232,3 +233,49 @@ def get_predictors(selected_forecast, date_time):
     X_new = selected_forecast[model_features]
 
     return X_new
+
+
+#==============================
+# HELPER FUNCTIONS -->new
+#==============================
+def parse_user_date(value):
+
+    value = str(value).strip()
+
+    supported_formats = [
+        "%Y-%m-%d",
+        "%d.%m.%Y",
+        "%d/%m/%Y"
+    ]
+
+    for fmt in supported_formats:
+        try:
+            return datetime.strptime(value, fmt).date()
+        except ValueError:
+            continue
+
+    raise ValueError(
+        f"Invalid date: {value}. "
+        "Use YYYY-MM-DD or DD.MM.YYYY."
+    )
+
+
+def parse_user_time(value):
+
+    value = str(value).strip()
+
+    supported_formats = [
+        "%H:%M",
+        "%H:%M:%S"
+    ]
+
+    for fmt in supported_formats:
+        try:
+            return datetime.strptime(value, fmt).time()
+        except ValueError:
+            continue
+
+    raise ValueError(
+        f"Invalid time: {value}. "
+        "Use HH:MM (24-hour format)."
+    )
