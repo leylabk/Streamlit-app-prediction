@@ -78,7 +78,7 @@ def show_hourly_usage(df):
             showgrid=True,
             gridcolor="#EAECEF",
             zeroline=False,
-            range=[0, 600],
+            range=[0, 610],
             tickmode="linear",
             tick0=0,
             dtick=100
@@ -201,7 +201,7 @@ def show_monthly_trends(df):
             zeroline=False,
             showline=False,
             tickfont=dict(size=11),
-            range=[0, 600],
+            range=[0, 610],
             tickmode="linear",
             tick0=0,
             dtick=100
@@ -452,7 +452,7 @@ def show_weather_usage(df):
 
     with st.container(border=True):
 
-        st.subheader("Temperature, Weather Conditions and Bike-Sharing Demand")
+        st.subheader("Weather Conditions and Bike-Sharing Demand")
         st.caption("Average bike-sharing demand by weather condition")
 
         weather_city_usage = (
