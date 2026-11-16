@@ -7,7 +7,7 @@ from sklearn.preprocessing import SplineTransformer
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from datetime import datetime, date, time
+from datetime import datetime, date, time, timedelta
 import requests
 import math
 
@@ -24,6 +24,11 @@ from graphs import (
     show_temperature_usage,
     show_city_comparison,
     show_weather_usage
+)
+
+from functions_cloud_db import (
+    parse_user_date,
+    parse_user_time
 )
 
 # Page configuration
@@ -48,12 +53,11 @@ with open(BASE_DIR / "catboost_categories_spline.pkl", "rb") as f:
 # Title
 st.title("Welcome to the Bike Sharing Demand Prediction App! 🚲")
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4 = st.tabs([
     "Homepage",
     "Data Visualization",
     "Automatic Prediction",
-    "Manual Prediction",
-    "Batch Prediction"
+    "Manual Prediction"
 ])
 
 with tab1:
@@ -165,316 +169,748 @@ with tab2:
 
 with tab3:
 
-    st.header("Automatic Bike Demand Prediction")
+    st.header("Bike Demand Prediction")
 
-    st.caption("""
-    - Select a city, date, and time.
-    - Weather and calendar information will be retrieved automatically.
-    - Weather forecasts are available for the next 5 days. Please select a date within this period.
-    """)
-
-    # User selects a city
-    city = st.selectbox(
-        "Select a city",
-        ["Berlin", "Köln", "Dresden"],
-        key="automatic_city"
+    st.caption(
+        "Predict hourly bike-sharing demand using "
+        "automatic weather forecasts and calendar information."
     )
 
-    # User selects a date
-    selected_date = st.date_input(
-        "Select a date",
-        value=date.today(),
-        key="automatic_date"
-    )
 
-    # User selects a time
-    selected_time = st.time_input(
-        "Select a time",
-        value=time(12, 0),
-        key="automatic_time"
-    )
+    # STEP 1: INDIVIDUAL PREDICTION
+    with st.container(border=True):
 
-    # Combine date and time
-    date_time = datetime.combine(
-        selected_date,
-        selected_time
-    )
+        st.subheader("1. Individual Bike Demand Prediction")
 
-        # Prediction button
-    if st.button(
-        "Predict Bike Demand",
-        type="primary",
-        use_container_width=True,
-        key="automatic_predict"
-    ):
+        st.caption(
+            "Select a city, date and time to predict "
+            "bike-sharing demand for one scenario."
+        )
+        st.info(
+            "Weather forecasts are available for the next 5 days. "
+            "The exact available forecast times depend on the weather API."
+        )
 
-        # Function 1: Get city coordinates
-        coordinates = get_city_coordinates(city)
+        city = st.selectbox(
+            "Select a city",
+            ["Berlin", "Köln", "Dresden"],
+            key="automatic_city"
+        )
 
-        if coordinates is None:
-            st.error("Coordinates not found for this city.")
-            st.stop()
+        selected_date = st.date_input(
+            "Select a date",
+            value=date.today(),
+            key="automatic_date"
+        )
 
-        lat, lon = coordinates
+        selected_time = st.time_input(
+            "Select a time",
+            value=time(12, 0),
+            key="automatic_time"
+        )
 
-        # Function 2: Get weather forecast
-        try:
-            selected_forecast = get_weather(
-                lat,
-                lon,
-                date_time,
-                city
+        date_time = datetime.combine(
+            selected_date,
+            selected_time
+        )
+
+        if st.button(
+            "Predict Bike Demand",
+            type="primary",
+            use_container_width=True,
+            key="automatic_predict"
+        ):
+
+            try:
+
+                coordinates = get_city_coordinates(city)
+
+                if coordinates is None:
+                    st.error("Coordinates not found.")
+                    st.stop()
+
+                lat, lon = coordinates
+
+                selected_forecast = get_weather(
+                    lat,
+                    lon,
+                    date_time,
+                    city
+                )
+
+                if selected_forecast.empty:
+                    st.warning(
+                        "No weather forecast available "
+                        "for the selected date and time."
+                    )
+                    st.stop()
+
+                X_new = get_predictors(
+                    selected_forecast,
+                    date_time
+                )
+
+                prediction = model.predict(X_new)
+
+                predicted_demand = math.ceil(
+                    max(0, prediction[0])
+                )
+
+                st.success("Prediction completed!")
+
+                st.metric(
+                    label="Predicted hourly bike-sharing demand",
+                    value=f"{predicted_demand:,} trips"
+                )
+
+                # Prepare results including weather data
+
+                weather_row = selected_forecast.iloc[0]
+
+                prediction_results = pd.DataFrame([{
+                    "city": city,
+                    "date": selected_date,
+                    "time": selected_time,
+                    "temperature_C": weather_row["temp"],
+                    "humidity_%": weather_row["humidity"],
+                    "wind_speed_m_s": weather_row["wind_speed"],
+                    "weather": weather_row["weather_group"],
+                    "rain_1h_mm": weather_row["rain_1h"],
+                    "snow_1h_mm": weather_row["snow_1h"],
+                    "predicted_bike_demand": predicted_demand
+                }])
+
+                csv = prediction_results.to_csv(
+                    index=False
+                ).encode("utf-8")
+
+                st.download_button(
+                    label="Download Prediction (CSV)",
+                    data=csv,
+                    file_name=(
+                        f"bike_demand_prediction_{city}_"
+                        f"{selected_date}.csv"
+                    ),
+                    mime="text/csv",
+                    use_container_width=True
+                )
+
+                with st.expander("View Prediction and Weather Data"):
+                    st.dataframe(
+                        prediction_results,
+                        use_container_width=True
+                    )
+
+            except requests.exceptions.RequestException:
+                st.error(
+                    "The weather forecast could not be retrieved. "
+                    "Please try again later."
+                )
+
+            except Exception as e:
+                st.error(f"Prediction failed: {e}")
+
+    # STEP 2: BATCH PREDICTION
+    with st.container(border=True):
+
+        st.subheader("2. Batch Bike Demand Prediction")
+
+        st.caption(
+            "Upload a CSV file containing multiple cities, "
+            "dates and times to automatically predict "
+            "bike-sharing demand for all scenarios."
+        )
+
+        # CSV TEMPLATE 
+
+        with st.expander("Download CSV Template", expanded=True):
+
+            st.write(
+                "Enter one prediction scenario per row."
             )
-        except requests.exceptions.RequestException:
-            st.error(
-                "The weather forecast could not be retrieved. "
-                "Please try again later."
+
+            template_df = pd.DataFrame({
+                "city": ["Berlin", "Köln", "Dresden"],
+                "date": [
+                    "2026-11-17",
+                    "2026-11-17",
+                    "2026-11-18"
+                ],
+                "time": ["08:00", "12:00", "17:00"]
+            })
+
+            template_csv = template_df.to_csv(
+                index=False
+            ).encode("utf-8")
+
+            st.download_button(
+                label="Download CSV Template",
+                data=template_csv,
+                file_name="bike_demand_batch_template.csv",
+                mime="text/csv",
+                use_container_width=True
             )
-            st.stop()
 
-        # Check whether a matching forecast exists
-        if selected_forecast.empty:
-            st.warning(
-                "No weather forecast is available for the "
-                "selected date and time. Please choose a "
-                "different date or time."
+            st.info(
+                "Replace the example rows with your own scenarios."
             )
-            st.stop()
 
-        # Function 3: Prepare predictors
-        X_new = get_predictors(
-            selected_forecast,
-            date_time
+            st.markdown(
+                """
+                **Required columns:**
+                - city: Berlin, Köln or Dresden
+                - date: YYYY-MM-DD, DD.MM.YYYY or DD/MM/YYYY
+                - time: HH:MM (24-hour format)
+                """
+            )
+
+        # UPLOAD CSV
+
+        st.write("Upload Input Data")
+
+        uploaded_file = st.file_uploader(
+            "Upload your CSV file",
+            type=["csv"],
+            key="automatic_batch_upload"
         )
 
-        # Make prediction with the CatBoost model
-        prediction = model.predict(X_new)
+        if uploaded_file is not None:
 
-        # Display prediction
-        st.success("Prediction completed!")
+            try:
 
-        st.metric(
-            label="Predicted hourly bike-sharing demand",
-            value=f"{math.ceil(max(0, prediction[0])):,} trips"
-        )
-        
-        # Prepare prediction results for download
-        prediction_results = X_new.copy()
+                batch_data = pd.read_csv(
+                    uploaded_file,
+                    encoding="utf-8-sig",
+                    dtype=str,
+                    keep_default_na=False
+                )
 
-        prediction_results["city"] = city
-        prediction_results["date"] = selected_date
-        prediction_results["time"] = selected_time
-        prediction_results["predicted_bike_demand"] = math.ceil(
-            max(0, prediction[0])
-        )
+            except UnicodeDecodeError:
 
-        # Convert results to CSV
-        csv = prediction_results.to_csv(index=False).encode("utf-8")
+                uploaded_file.seek(0)
 
-        # Download button
-        st.download_button(
-            label="Download Prediction (CSV)",
-            data=csv,
-            file_name=f"bike_demand_prediction_{city}_{selected_date}.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
-        
-        # Show model input
-        with st.expander("View Input Data"):
-            st.dataframe(X_new)
+                try:
+                    batch_data = pd.read_csv(
+                        uploaded_file,
+                        encoding="cp1252",
+                        dtype=str,
+                        keep_default_na=False
+                    )
+
+                except Exception:
+                    st.error("The CSV file could not be read.")
+                    st.stop()
+
+            except pd.errors.EmptyDataError:
+                st.error("The uploaded CSV file is empty.")
+                st.stop()
+
+            except Exception as e:
+                st.error(f"Error reading CSV file: {e}")
+                st.stop()
+
+            # VALIDATION
+            if batch_data.empty:
+                st.warning("The uploaded CSV contains no scenarios.")
+                st.stop()
+
+            required_columns = ["city", "date", "time"]
+
+            missing_columns = [
+                col for col in required_columns
+                if col not in batch_data.columns
+            ]
+
+            if missing_columns:
+                st.error(
+                    f"Missing columns: {missing_columns}"
+                )
+                st.stop()
+
+            for col in required_columns:
+                batch_data[col] = batch_data[col].str.strip()
+
+            if (batch_data[required_columns] == "").any().any():
+                st.error(
+                    "Some rows contain missing values."
+                )
+                st.stop()
+
+            valid_cities = ["Berlin", "Köln", "Dresden"]
+
+            invalid_cities = batch_data[
+                ~batch_data["city"].isin(valid_cities)
+            ]
+
+            if not invalid_cities.empty:
+                st.error("Invalid city names found.")
+                st.dataframe(invalid_cities[["city"]])
+                st.stop()
+
+            # DATE AND TIME VALIDATION
+
+            parsed_dates = []
+            parsed_times = []
+            validation_errors = []
+
+            for index, row in batch_data.iterrows():
+
+                try:
+
+                    parsed_date = parse_user_date(row["date"])
+                    parsed_time = parse_user_time(row["time"])
+
+                    parsed_dates.append(parsed_date)
+                    parsed_times.append(parsed_time)
+
+                except ValueError as e:
+
+                    validation_errors.append(
+                        f"Row {index + 2}: {e}"
+                    )
+
+                    parsed_dates.append(None)
+                    parsed_times.append(None)
+
+            if validation_errors:
+
+                st.error("Invalid dates or times:")
+
+                for error in validation_errors:
+                    st.write(f"- {error}")
+
+                st.stop()
+
+            batch_data["date"] = parsed_dates
+            batch_data["time"] = parsed_times
+
+            batch_data["date_time"] = batch_data.apply(
+                lambda row: datetime.combine(
+                    row["date"],
+                    row["time"]
+                ),
+                axis=1
+            )
+
+            today = date.today()
+            max_forecast_date = today + timedelta(days=5)
+
+            invalid_dates = batch_data[
+                (batch_data["date"] < today) |
+                (batch_data["date"] > max_forecast_date)
+            ]
+
+            if not invalid_dates.empty:
+
+                st.error(
+                    "Some dates are outside the supported "
+                    "forecast period."
+                )
+
+                st.dataframe(
+                    invalid_dates[required_columns],
+                    use_container_width=True
+                )
+
+                st.stop()
+
+            st.success(
+                "CSV file uploaded and validated successfully!"
+            )
+
+            # BATCH PREDICTION
+
+            if st.button(
+                "Predict All Scenarios",
+                type="primary",
+                use_container_width=True,
+                key="automatic_batch_predict"
+            ):
+
+                results = []
+                errors = []
+
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+
+                total_rows = len(batch_data)
+
+                for index, row in batch_data.iterrows():
+
+                    city = row["city"]
+                    date_time = row["date_time"]
+
+                    status_text.write(
+                        f"Processing {index + 1} of {total_rows}: "
+                        f"{city} - {date_time}"
+                    )
+
+                    try:
+
+                        coordinates = get_city_coordinates(city)
+
+                        if coordinates is None:
+                            raise ValueError(
+                                "Coordinates not found."
+                            )
+
+                        lat, lon = coordinates
+
+                        selected_forecast = get_weather(
+                            lat,
+                            lon,
+                            date_time,
+                            city
+                        )
+
+                        if selected_forecast.empty:
+                            raise ValueError(
+                                "No weather forecast available."
+                            )
+
+                        X_new = get_predictors(
+                            selected_forecast,
+                            date_time
+                        )
+
+                        prediction = model.predict(X_new)
+
+                        predicted_demand = math.ceil(
+                            max(0, prediction[0])
+                        )
+
+                        weather_row = selected_forecast.iloc[0]
+
+                        result = {
+                            "city": city,
+                            "date": row["date"],
+                            "time": row["time"],
+                            "temperature_C": weather_row["temp"],
+                            "humidity_%": weather_row["humidity"],
+                            "wind_speed_m_s": weather_row["wind_speed"],
+                            "weather": weather_row["weather_group"],
+                            "rain_1h_mm": weather_row["rain_1h"],
+                            "snow_1h_mm": weather_row["snow_1h"],
+                            "predicted_bike_demand": predicted_demand
+                        }
+
+                        results.append(result)
+
+                    except requests.exceptions.RequestException:
+
+                        errors.append({
+                            "city": city,
+                            "date": row["date"],
+                            "time": row["time"],
+                            "error": "Weather API request failed."
+                        })
+
+                    except Exception as e:
+
+                        errors.append({
+                            "city": city,
+                            "date": row["date"],
+                            "time": row["time"],
+                            "error": str(e)
+                        })
+
+                    progress_bar.progress(
+                        (index + 1) / total_rows
+                    )
+
+                status_text.empty()
+                progress_bar.empty()
+
+                # RESULTS
+
+                if results:
+
+                    results_df = pd.DataFrame(results)
+
+                    st.success(
+                        f"{len(results)} predictions completed successfully!"
+                    )
+
+                    st.subheader("Batch Prediction Results")
+
+                    st.dataframe(
+                        results_df,
+                        use_container_width=True,
+                        height=200
+                    )
+
+                    results_csv = results_df.to_csv(
+                        index=False
+                    ).encode("utf-8")
+
+                    st.download_button(
+                        label="Download All Predictions (CSV)",
+                        data=results_csv,
+                        file_name="bike_demand_batch_predictions.csv",
+                        mime="text/csv",
+                        use_container_width=True
+                    )
+
+                if errors:
+
+                    errors_df = pd.DataFrame(errors)
+
+                    st.warning(
+                        f"{len(errors)} scenarios could not be predicted."
+                    )
+
+                    with st.expander("View Failed Scenarios"):
+
+                        st.dataframe(
+                            errors_df,
+                            use_container_width=True,
+                            height=200
+                        )
+
+                        errors_csv = errors_df.to_csv(
+                            index=False
+                        ).encode("utf-8")
+
+                        st.download_button(
+                            label="Download Failed Scenarios (CSV)",
+                            data=errors_csv,
+                            file_name="bike_demand_failed_scenarios.csv",
+                            mime="text/csv"
+                        )
 
 
 
 with tab4:
+    st.header("Manual Bike Demand Prediction")
+
     st.caption(
-        "Enter all required input variables manually, "
-        "including weather and calendar information, "
-        "to predict hourly bike-sharing demand."
+        "Enter prediction variables manually or upload a CSV file "
+        "to generate multiple hourly bike-sharing demand predictions."
     )
-# User inputs
-    st.subheader("Categorical Features")
-    col1, col2 = st.columns(2)
 
-    with col1:
-        city_name = st.selectbox(
-            "City",
-            categories["city_name"]
+    # STEP 1: INDIVIDUAL PREDICTION
+    with st.container(border=True):
+        st.subheader("1. Individual Bike Demand Prediction")
+
+        st.caption(
+            "Enter all required input variables manually, "
+            "including weather and calendar information."
         )
 
-        weather_group = st.selectbox(
-            "Weather Group",
-            categories["weather_group"]
-        )
+        st.markdown("**Categorical Features**")
 
-        
-    with col2:
-        working_day = st.selectbox(
-                "Working Day",
-                categories["working_day"]
+        col1, col2 = st.columns(2)
+
+        with col1:
+            city_name = st.selectbox(
+                "City",
+                categories["city_name"],
+                key="manual_city"
             )
-        school_break = st.selectbox(
-            "School Break",
-            categories["school_break"]
-        )
 
-        # month = st.selectbox(
-        # "Month",
-        # categories["month"]
-        # )
+            weather_group = st.selectbox(
+                "Weather Group",
+                categories["weather_group"],
+                key="manual_weather"
+            )
 
-        # hour = st.selectbox(
-        # "Hour",
-        # categories["hour"]
-        # )
+        with col2:
+            working_day = st.selectbox(
+                "Working Day",
+                categories["working_day"],
+                key="manual_working_day"
+            )
 
-    st.divider()
+            school_break = st.selectbox(
+                "School Break",
+                categories["school_break"],
+                key="manual_school_break"
+            )
 
-    st.subheader("Time Features")
+        st.divider()
 
-    col3, col4 = st.columns(2)
+        st.markdown("**Time Features**")
 
-    with col3:
-        month = st.number_input(
-            "Month",
-            min_value=1,
-            max_value=12,
-            value=1,
-            step=1
-        )
+        col3, col4 = st.columns(2)
 
-    with col4:
-        hour = st.number_input(
-            "Hour",
-            min_value=0,
-            max_value=23,
-            value=12,
-            step=1
-        )
+        with col3:
+            month = st.number_input(
+                "Month",
+                min_value=1,
+                max_value=12,
+                value=1,
+                step=1,
+                key="manual_month"
+            )
 
-    st.divider()
+        with col4:
+            hour = st.number_input(
+                "Hour",
+                min_value=0,
+                max_value=23,
+                value=12,
+                step=1,
+                key="manual_hour"
+            )
 
-    st.subheader("Weather Measurements")
+        st.divider()
 
-    col5, col6 = st.columns(2)
+        st.markdown("**Weather Measurements**")
 
-    with col5:
-        temp = st.number_input("Temperature", value=20.0)
-        humidity = st.number_input("Humidity", value=50.0)
-        wind_speed = st.number_input("Wind Speed", value=0.0)
+        col5, col6 = st.columns(2)
 
-    with col6:
-        rain_1h = st.number_input("Rain (1h)", value=0.0)
-        snow_1h = st.number_input("Snow (1h)", value=0.0)
+        with col5:
+            temp = st.number_input(
+                "Temperature",
+                value=20.0,
+                key="manual_temp"
+            )
 
-    st.divider()
+            humidity = st.number_input(
+                "Humidity",
+                value=50.0,
+                key="manual_humidity"
+            )
 
-    # Prediction
-    if st.button("Predict", type="primary", use_container_width=True):
+            wind_speed = st.number_input(
+                "Wind Speed",
+                value=0.0,
+                key="manual_wind"
+            )
 
-        input_data = pd.DataFrame([{
-            "city_name": city_name,
-            "weather_group": weather_group,
-            "working_day": working_day,
-            "school_break": school_break,
-            "month": month,
-            "hour": hour,
-            "temp": temp,
-            "humidity": humidity,
-            "wind_speed": wind_speed,
-            "rain_1h": rain_1h,
-            "snow_1h": snow_1h
-        }])
+        with col6:
+            rain_1h = st.number_input(
+                "Rain (1h)",
+                value=0.0,
+                key="manual_rain"
+            )
 
-        # Make prediction with the CatBoost model
-        prediction = model.predict(input_data)
+            snow_1h = st.number_input(
+                "Snow (1h)",
+                value=0.0,
+                key="manual_snow"
+            )
 
-        # Display prediction
-        st.success("Prediction completed!")
+        st.divider()
 
-        st.metric(
-            label="Predicted hourly bike-sharing demand",
-            value=f"{math.ceil(max(0, prediction[0])):,} trips"
-        )
-        
-        # Prepare prediction results for download
-        prediction_results = input_data.copy()
+        if st.button(
+            "Predict",
+            type="primary",
+            use_container_width=True,
+            key="individual_manual_predict"
+        ):
 
-        prediction_results["predicted_bike_demand"] = math.ceil(
-            max(0, prediction[0])
-        )
+            input_data = pd.DataFrame([{
+                "city_name": city_name,
+                "weather_group": weather_group,
+                "working_day": working_day,
+                "school_break": school_break,
+                "month": month,
+                "hour": hour,
+                "temp": temp,
+                "humidity": humidity,
+                "wind_speed": wind_speed,
+                "rain_1h": rain_1h,
+                "snow_1h": snow_1h
+            }])
 
-        # Convert results to CSV
-        csv = prediction_results.to_csv(index=False).encode("utf-8")
+            prediction = model.predict(input_data)
 
-        # Download button
-        st.download_button(
-            label="Download Prediction (CSV)",
-            data=csv,
-            file_name=f"bike_demand_prediction_{city_name}_{month}_{hour}.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
-        
-        # Show model input
-        with st.expander("View Input Data"):
-            st.dataframe(input_data)
+            predicted_demand = math.ceil(
+                max(0, prediction[0])
+            )
 
-with tab5:
-    st.header("Batch Bike Demand Prediction")
+            st.success("Prediction completed!")
 
-    st.caption(
-        "Generate multiple bike-sharing demand predictions "
-        "by uploading your own input scenarios."
-    )
+            st.metric(
+                label="Predicted hourly bike-sharing demand",
+                value=f"{predicted_demand:,} trips"
+            )
 
-    st.divider()
+            prediction_results = input_data.copy()
 
-    # Section 1: Download template
+            prediction_results["predicted_bike_demand"] = (
+                predicted_demand
+            )
+
+            csv = prediction_results.to_csv(
+                index=False
+            ).encode("utf-8")
+
+            st.download_button(
+                label="Download Prediction (CSV)",
+                data=csv,
+                file_name=(
+                    f"bike_demand_prediction_"
+                    f"{city_name}_{month}_{hour}.csv"
+                ),
+                mime="text/csv",
+                use_container_width=True
+            )
+
+            with st.expander("View Input Data"):
+                st.dataframe(
+                    input_data,
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+    # STEP 2: BATCH PREDICTION
     with st.container(border=True):
-        st.subheader("1. Download CSV Template")
+        st.subheader("2. Batch Bike Demand Prediction")
 
-        st.write(
-            "Start by downloading our predefined CSV template. "
-            "Fill in your input variables before uploading it."
+        st.caption(
+            "Generate multiple bike-sharing demand predictions "
+            "by uploading your own input scenarios."
         )
 
-        template_columns = [
-            "city_name",
-            "weather_group",
-            "working_day",
-            "school_break",
-            "month",
-            "hour",
-            "temp",
-            "humidity",
-            "wind_speed",
-            "rain_1h",
-            "snow_1h"
-        ]
+        # Download CSV template
+        with st.expander("Download CSV Template"):
+            st.write(
+                "Download the CSV template containing example scenarios. "
+                "You can modify the example rows or add new scenarios "
+                "before uploading the file."
+            )
 
-        template_df = pd.DataFrame(columns=template_columns)
+            template_columns = [
+                "city_name",
+                "weather_group",
+                "working_day",
+                "school_break",
+                "month",
+                "hour",
+                "temp",
+                "humidity",
+                "wind_speed",
+                "rain_1h",
+                "snow_1h"
+            ]
+            template_data = [
+                ["Berlin", "Clear", 1, 0, 5, 8, 18.0, 55, 3.2, 0.0, 0.0],
+                ["Hamburg", "Rain", 1, 0, 10, 17, 12.0, 85, 5.5, 1.2, 0.0],
+                ["Munich", "Clouds", 0, 1, 12, 14, 4.0, 70, 2.0, 0.0, 0.0]
+            ]
+            template_df = pd.DataFrame(
+                template_data,
+                columns=template_columns
+            )
 
-        template_csv = template_df.to_csv(
-            index=False
-        ).encode("utf-8")
+            template_csv = template_df.to_csv(
+                index=False
+            ).encode("utf-8")
 
-        st.download_button(
-            label="Download CSV Template",
-            data=template_csv,
-            file_name="bike_demand_input_template.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
+            st.download_button(
+                label="Download CSV Template",
+                data=template_csv,
+                file_name="bike_demand_input_template.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
 
-    # Section 2: Upload file
-    with st.container(border=True):
-        st.subheader("2. Upload Input Data")
+        st.divider()
 
-        st.write(
-            "Upload your completed CSV file containing "
-            "multiple bike demand prediction scenarios."
-        )
+        # Upload CSV file
+        st.markdown("**Upload Input Data**")
 
         uploaded_file = st.file_uploader(
             "Choose your CSV file",
@@ -499,85 +935,95 @@ with tab5:
 
             except pd.errors.EmptyDataError:
                 st.error("The uploaded CSV file is empty.")
-                st.stop()
+                batch_data = None
 
-            if batch_data.empty:
-                st.warning(
-                    "The uploaded CSV contains no prediction scenarios."
-                )
+            if batch_data is not None:
 
-            else:
-                st.success("CSV file uploaded successfully!")
+                if batch_data.empty:
+                    st.warning(
+                        "The uploaded CSV contains no prediction scenarios."
+                    )
 
+                else:
+                    st.success(
+                        f"CSV file uploaded successfully! "
+                        f"{len(batch_data)} scenarios found."
+                    )
 
-    # Section 3: Generate predictions
-    with st.container(border=True):
-        st.subheader("3. Generate Predictions")
+                    st.divider()
 
-        if st.button(
-            "Generate Predictions",
-            type="primary",
-            use_container_width=True,
-            key="batch_predict"
-        ):
+                    # Generate batch predictions
+                    if st.button(
+                        "Generate Predictions",
+                        type="primary",
+                        use_container_width=True,
+                        key="batch_predict"
+                    ):
 
-            required_columns = [
-                "city_name",
-                "weather_group",
-                "working_day",
-                "school_break",
-                "month",
-                "hour",
-                "temp",
-                "humidity",
-                "wind_speed",
-                "rain_1h",
-                "snow_1h"
-            ]
+                        required_columns = [
+                            "city_name",
+                            "weather_group",
+                            "working_day",
+                            "school_break",
+                            "month",
+                            "hour",
+                            "temp",
+                            "humidity",
+                            "wind_speed",
+                            "rain_1h",
+                            "snow_1h"
+                        ]
 
-            if not all(
-                col in batch_data.columns
-                for col in required_columns
-            ):
-                st.error(
-                    "The uploaded CSV is missing required columns."
-                )
+                        missing_columns = [
+                            col for col in required_columns
+                            if col not in batch_data.columns
+                        ]
 
-            else:
-                # Prepare model input
-                X_batch = batch_data[required_columns].copy()
+                        if missing_columns:
+                            st.error(
+                                "The uploaded CSV is missing "
+                                "the following columns: "
+                                + ", ".join(missing_columns)
+                            )
 
-                # Make predictions
-                predictions = model.predict(X_batch)
+                        else:
+                            X_batch = batch_data[
+                                required_columns
+                            ].copy()
 
-                # Add predictions to results
-                results = batch_data.copy()
+                            predictions = model.predict(X_batch)
 
-                results["predicted_bike_demand"] = [
-                    math.ceil(max(0, value))
-                    for value in predictions
-                ]
+                            results = batch_data.copy()
 
-                st.success("All predictions completed!")
+                            results["predicted_bike_demand"] = [
+                                math.ceil(max(0, value))
+                                for value in predictions
+                            ]
 
-                st.markdown("### Prediction Results")
+                            st.success(
+                                f"All {len(results)} predictions "
+                                "completed successfully!"
+                            )
 
-                st.dataframe(
-                    results,
-                    use_container_width=True,
-                    hide_index=True,
-                    height=200
-                )
+                            st.markdown("**Prediction Results**")
 
-                # Download prediction results
-                results_csv = results.to_csv(
-                    index=False
-                ).encode("utf-8")
+                            st.dataframe(
+                                results,
+                                use_container_width=True,
+                                hide_index=True,
+                                height=200
+                            )
 
-                st.download_button(
-                    label="Download Prediction Results",
-                    data=results_csv,
-                    file_name="bike_demand_prediction_results.csv",
-                    mime="text/csv",
-                    use_container_width=True
-                )
+                            results_csv = results.to_csv(
+                                index=False
+                            ).encode("utf-8")
+
+                            st.download_button(
+                                label="Download Prediction Results",
+                                data=results_csv,
+                                file_name=(
+                                    "bike_demand_prediction_results.csv"
+                                ),
+                                mime="text/csv",
+                                use_container_width=True
+                            )
