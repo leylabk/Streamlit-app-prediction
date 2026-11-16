@@ -95,8 +95,7 @@ def show_monthly_trends(df):
     with st.container(border=True):
 
         st.subheader("Monthly Patterns")
-        st.caption("""Average bike-sharing demand throughout the year        
-        (August 2022 – July 2023)""")
+        st.caption("""Average bike-sharing demand throughout the year (August 2022 – July 2023)""")
 
         # Define custom month order
         month_order = [8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7]
