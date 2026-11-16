@@ -32,7 +32,8 @@ def show_hourly_usage(df):
             y="total_bike_usage",
             color="city_name",
             markers=True,
-            color_discrete_map=city_colors
+            color_discrete_map=city_colors, 
+            category_orders={"city_name": sorted(city_colors.keys())}
         )
 
         fig.update_traces(
@@ -76,7 +77,11 @@ def show_hourly_usage(df):
         fig.update_yaxes(
             showgrid=True,
             gridcolor="#EAECEF",
-            zeroline=False
+            zeroline=False,
+            range=[0, 600],
+            tickmode="linear",
+            tick0=0,
+            dtick=100
         )
 
         st.plotly_chart(
@@ -137,7 +142,8 @@ def show_monthly_trends(df):
             color="city_name",
             markers=True,
             color_discrete_map=city_colors,
-            category_orders={"month_label": month_labels}
+            category_orders={"month_label": month_labels, 
+                            "city_name": sorted(city_colors.keys())}
         )
 
         # Line and marker styling
@@ -194,7 +200,11 @@ def show_monthly_trends(df):
             gridcolor="#EAECEF",
             zeroline=False,
             showline=False,
-            tickfont=dict(size=11)
+            tickfont=dict(size=11),
+            range=[0, 600],
+            tickmode="linear",
+            tick0=0,
+            dtick=100
         )
 
         # Display chart
@@ -251,7 +261,8 @@ def show_temperature_usage(df):
             y="total_bike_usage",
             color="city_name",
             markers=True,
-            color_discrete_map=city_colors
+            color_discrete_map=city_colors,
+            category_orders={"city_name": sorted(city_colors.keys())}
         )
 
         # Line and marker styling
