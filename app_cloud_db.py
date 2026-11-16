@@ -311,6 +311,7 @@ with tab3:
                 st.error(f"Prediction failed: {e}")
 
     # STEP 2: BATCH PREDICTION
+
     with st.container(border=True):
 
         st.subheader("2. Batch Bike Demand Prediction")
@@ -318,61 +319,109 @@ with tab3:
         st.caption(
             "Upload a CSV file containing multiple cities, "
             "dates and times to automatically predict "
-            "bike-sharing demand for all scenarios."
+            "bike-sharing demand for all entries."
         )
 
-        # CSV TEMPLATE 
+        # CSV TEMPLATE
 
-        with st.expander("Download CSV Template", expanded=True):
+        template_df = pd.DataFrame({
+            "city": ["Berlin", "Köln", "Dresden"],
+            "date": [
+                "2026-11-17",
+                "2026-11-17",
+                "2026-11-18"
+            ],
+            "time": ["08:00", "12:00", "17:00"]
+        })
 
-            st.write(
-                "Enter one prediction scenario per row."
-            )
+        template_csv = template_df.to_csv(
+            index=False
+        ).encode("utf-8")
 
-            template_df = pd.DataFrame({
-                "city": ["Berlin", "Köln", "Dresden"],
-                "date": [
-                    "2026-11-17",
-                    "2026-11-17",
-                    "2026-11-18"
-                ],
-                "time": ["08:00", "12:00", "17:00"]
-            })
+        # DOWNLOAD AND UPLOAD SIDE BY SIDE
 
-            template_csv = template_df.to_csv(
-                index=False
-            ).encode("utf-8")
+        st.markdown("""
+        <style>
+
+        /* Download button */
+        div[data-testid="stDownloadButton"] button {
+            width: 100%;
+            height: 48px;
+            border: 1px solid #808080;
+            border-radius: 8px;
+            background-color: transparent;
+            font-weight: 600;
+        }
+
+        /* File uploader outer border */
+        div[data-testid="stFileUploader"] section {
+            width: 100% !important;
+            min-height: 48px !important;
+            height: 48px !important;
+            box-sizing: border-box !important;
+            padding: 0 12px !important;
+            border: 1px solid #808080 !important;
+            border-radius: 8px !important;
+            background-color: transparent !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        /* Hide drag and drop instructions */
+        div[data-testid="stFileUploaderDropzoneInstructions"] {
+            display: none !important;
+        }
+
+        /* Upload button */
+        div[data-testid="stFileUploader"] section button {
+            height: 36px !important;
+            border-radius: 6px !important;
+        }
+
+        </style>
+        """, unsafe_allow_html=True)
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("**Download CSV Template**")
+            st.caption("Download the example entries.")
 
             st.download_button(
                 label="Download CSV Template",
                 data=template_csv,
                 file_name="bike_demand_batch_template.csv",
                 mime="text/csv",
-                use_container_width=True
+                use_container_width=True,
+                key="manual_batch_template_download"
             )
 
-            st.info(
-                "Replace the example rows with your own scenarios."
+        with col2:
+            st.markdown("**Upload Input Data**")
+            st.caption("Upload your completed CSV file.")
+
+            uploaded_file = st.file_uploader(
+                "Upload your CSV file",
+                type=["csv"],
+                key="manual_batch_csv_upload",
+                label_visibility="collapsed"
             )
 
-            st.markdown(
-                """
-                **Required columns:**
-                - city: Berlin, Köln or Dresden
-                - date: YYYY-MM-DD, DD.MM.YYYY or DD/MM/YYYY
-                - time: HH:MM (24-hour format)
-                """
-            )
-
-        # UPLOAD CSV
-
-        st.write("Upload Input Data")
-
-        uploaded_file = st.file_uploader(
-            "Upload your CSV file",
-            type=["csv"],
-            key="automatic_batch_upload"
+        st.info(
+            "Replace the example rows with your own entries."
         )
+
+        st.caption(
+            """
+            **Required columns:**
+            - city: Berlin, Köln or Dresden
+            - date: YYYY-MM-DD, DD.MM.YYYY or DD/MM/YYYY
+            - time: HH:MM (24-hour format)
+            """
+        )
+
+        # READ CSV
 
         if uploaded_file is not None:
 
@@ -410,8 +459,9 @@ with tab3:
                 st.stop()
 
             # VALIDATION
+
             if batch_data.empty:
-                st.warning("The uploaded CSV contains no scenarios.")
+                st.warning("The uploaded CSV contains no entries.")
                 st.stop()
 
             required_columns = ["city", "date", "time"]
@@ -492,6 +542,8 @@ with tab3:
                 axis=1
             )
 
+            # FORECAST DATE VALIDATION
+
             today = date.today()
             max_forecast_date = today + timedelta(days=5)
 
@@ -521,10 +573,10 @@ with tab3:
             # BATCH PREDICTION
 
             if st.button(
-                "Predict All Scenarios",
+                "Predict All Entries",
                 type="primary",
                 use_container_width=True,
-                key="automatic_batch_predict"
+                key="manual_automatic_batch_predict"
             ):
 
                 results = []
@@ -648,7 +700,8 @@ with tab3:
                         data=results_csv,
                         file_name="bike_demand_batch_predictions.csv",
                         mime="text/csv",
-                        use_container_width=True
+                        use_container_width=True,
+                        key="manual_batch_results_download"
                     )
 
                 if errors:
@@ -656,10 +709,10 @@ with tab3:
                     errors_df = pd.DataFrame(errors)
 
                     st.warning(
-                        f"{len(errors)} scenarios could not be predicted."
+                        f"{len(errors)} entries could not be predicted."
                     )
 
-                    with st.expander("View Failed Scenarios"):
+                    with st.expander("View Failed Entries"):
 
                         st.dataframe(
                             errors_df,
@@ -672,10 +725,11 @@ with tab3:
                         ).encode("utf-8")
 
                         st.download_button(
-                            label="Download Failed Scenarios (CSV)",
+                            label="Download Failed Entries (CSV)",
                             data=errors_csv,
-                            file_name="bike_demand_failed_scenarios.csv",
-                            mime="text/csv"
+                            file_name="bike_demand_failed_entries.csv",
+                            mime="text/csv",
+                            key="manual_batch_errors_download"
                         )
 
 
@@ -861,14 +915,14 @@ with tab4:
 
         st.caption(
             "Generate multiple bike-sharing demand predictions "
-            "by uploading your own input scenarios."
+            "by uploading your own input entries."
         )
 
         # Download CSV template
         with st.expander("Download CSV Template"):
             st.write(
-                "Download the CSV template containing example scenarios. "
-                "You can modify the example rows or add new scenarios "
+                "Download the CSV template containing example entries. "
+                "You can modify the example rows or add new entries "
                 "before uploading the file."
             )
 
@@ -941,13 +995,13 @@ with tab4:
 
                 if batch_data.empty:
                     st.warning(
-                        "The uploaded CSV contains no prediction scenarios."
+                        "The uploaded CSV contains no prediction entries."
                     )
 
                 else:
                     st.success(
                         f"CSV file uploaded successfully! "
-                        f"{len(batch_data)} scenarios found."
+                        f"{len(batch_data)} entries found."
                     )
 
                     st.divider()
