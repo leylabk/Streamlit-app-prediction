@@ -903,7 +903,7 @@ with tab4:
             ).encode("utf-8-sig")
 
             st.download_button(
-                label="Download Prediction Results",
+                label="Download Prediction (CSV)",
                 data=csv,
                 file_name=(
                     f"bike_demand_prediction_"
@@ -914,12 +914,6 @@ with tab4:
                 key="individual_manual_download"
             )
 
-            with st.expander("View Input Data"):
-                st.dataframe(
-                    input_data,
-                    use_container_width=True,
-                    hide_index=True
-                )
 
     # STEP 2: BATCH PREDICTION
     with st.container(border=True):
