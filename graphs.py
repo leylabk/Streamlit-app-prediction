@@ -14,7 +14,7 @@ def show_hourly_usage(df):
 
     with st.container(border=True):
 
-        st.subheader("Hourly Usage Patterns")
+        st.subheader("Hourly Patterns")
         st.caption("Average bike-sharing demand throughout the day")
 
         hourly_data = (
@@ -78,8 +78,8 @@ def show_monthly_trends(df):
 
     with st.container(border=True):
 
-        st.subheader("Monthly Trends")
-        st.caption("Average bike usage across the year (August–July)")
+        st.subheader("Monthly Patterns")
+        st.caption("""Average bike-sharing across the year      (August 2022 – July 2023)""")
 
         # Define custom month order
         month_order = [8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7]
@@ -135,7 +135,7 @@ def show_monthly_trends(df):
         fig.update_layout(
             template="plotly_white",
             xaxis_title="Month",
-            yaxis_title="Average Bike Usage",
+            yaxis_title="Average Bike-Sharing Demand",
             hovermode="x",
             clickmode="event",
 
@@ -202,8 +202,8 @@ def show_temperature_usage(df):
 
     with st.container(border=True):
 
-        st.subheader("Temperature and Bike Usage")
-        st.caption("Average bike usage across temperature ranges by city")
+        st.subheader("Temperature and Bike-Sharing Demand")
+        st.caption("Average bike-sharing demand across temperature ranges")
 
         # Group temperature into 15 ranges
         df_temp = df.copy()
@@ -249,7 +249,7 @@ def show_temperature_usage(df):
         fig.update_layout(
             template="plotly_white",
             xaxis_title="Temperature",
-            yaxis_title="Average Bike Usage",
+            yaxis_title="Average Bike-Sharing Demand",
             hovermode="x",
 
             legend=dict(
@@ -315,7 +315,7 @@ def show_city_comparison(df):
     with st.container(border=True):
 
         st.subheader("City Comparison")
-        st.caption("Average hourly bike usage by city")
+        st.caption("Average hourly bike-sharing demand by city")
 
         # Calculate average usage by city
         city_usage = (
@@ -344,7 +344,7 @@ def show_city_comparison(df):
         # Layout styling
         fig.update_layout(
             template="plotly_white",
-            xaxis_title="Average Bike Usage",
+            xaxis_title="Average Bike-Sharing Demand",
             yaxis_title=None,
             hovermode="closest",
             showlegend=False,
@@ -425,8 +425,8 @@ def show_weather_usage(df):
 
     with st.container(border=True):
 
-        st.subheader("Temperature, Weather Condition and Bike Usage")
-        st.caption("Average bike usage by city and weather condition")
+        st.subheader("Temperature, Weather Conditions and Bike-Sharing Demand")
+        st.caption("Average bike-sharing demans by weather condition")
 
         weather_city_usage = (
             df.groupby(
@@ -481,7 +481,7 @@ def show_weather_usage(df):
         fig.update_layout(
             template="plotly_white",
             xaxis_title=None,
-            yaxis_title="Average Bike Usage",
+            yaxis_title="Average Bike-Sharing Demand",
             hovermode="closest",
 
             legend=dict(
