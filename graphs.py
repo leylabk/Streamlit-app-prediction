@@ -79,7 +79,7 @@ def show_hourly_usage(df):
 
         fig.update_yaxes(
             showgrid=True,
-            gridcolor="#EAECEF",
+            gridwidth=0.8,
             zeroline=False,
             range=[0, 610],
             tickmode="linear",
@@ -90,6 +90,7 @@ def show_hourly_usage(df):
         st.plotly_chart(
             fig,
             use_container_width=True,
+            theme="streamlit",
             config={
                 "displayModeBar": True,
                 "displaylogo": False
@@ -200,7 +201,7 @@ def show_monthly_trends(df):
         # Y-axis
         fig.update_yaxes(
             showgrid=True,
-            gridcolor="#EAECEF",
+            gridwidth=0.8,
             zeroline=False,
             showline=False,
             tickfont=dict(size=11),
@@ -214,14 +215,10 @@ def show_monthly_trends(df):
         st.plotly_chart(
             fig,
             use_container_width=True,
+            theme="streamlit",
             config={
                 "displayModeBar": True,
-                "displaylogo": False,
-                "modeBarButtonsToRemove": [
-                    "toImage",
-                    "select2d",
-                    "lasso2d"
-                ]
+                "displaylogo": False
             }
         )
 
@@ -316,7 +313,7 @@ def show_temperature_usage(df):
         # Y-axis
         fig.update_yaxes(
             showgrid=True,
-            gridcolor="#EAECEF",
+            gridwidth=0.8,
             zeroline=False,
             showline=False,
             tickfont=dict(size=11), 
@@ -327,14 +324,10 @@ def show_temperature_usage(df):
         st.plotly_chart(
             fig,
             use_container_width=True,
+            theme="streamlit",
             config={
                 "displayModeBar": True,
-                "displaylogo": False,
-                "modeBarButtonsToRemove": [
-                    "toImage",
-                    "select2d",
-                    "lasso2d"
-                ]
+                "displaylogo": False
             }
         )
 
@@ -396,7 +389,7 @@ def show_city_comparison(df):
         # X-axis
         fig.update_xaxes(
             showgrid=True,
-            gridcolor="#EAECEF",
+            gridwidth=0.8,
             zeroline=False,
             showline=False,
             tickfont=dict(size=11)
@@ -415,14 +408,10 @@ def show_city_comparison(df):
         st.plotly_chart(
             fig,
             use_container_width=True,
+            theme="streamlit",
             config={
                 "displayModeBar": True,
-                "displaylogo": False,
-                "modeBarButtonsToRemove": [
-                    "toImage",
-                    "select2d",
-                    "lasso2d"
-                ]
+                "displaylogo": False
             }
         )
 
@@ -552,7 +541,7 @@ def show_weather_usage(df):
         # Y-axis
         fig.update_yaxes(
             showgrid=True,
-            gridcolor="#EAECEF",
+            gridwidth=0.8,
             zeroline=False,
             showline=False,
             tickfont=dict(size=11),
@@ -563,13 +552,9 @@ def show_weather_usage(df):
         st.plotly_chart(
             fig,
             use_container_width=True,
+            theme="streamlit",
             config={
                 "displayModeBar": True,
-                "displaylogo": False,
-                "modeBarButtonsToRemove": [
-                    "toImage",
-                    "select2d",
-                    "lasso2d"
-                ]
+                "displaylogo": False
             }
         )
