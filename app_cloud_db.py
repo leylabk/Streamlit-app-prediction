@@ -67,6 +67,12 @@ with tab1:
         We trained a machine learning model on past bike-sharing data from these cities from years 2022-2023  – on up to 2M trips per city.  
         So now you can estimate the demand for a future date – this way, your company can prepare enough bikes to keep your customers happy!
 
+        #### Model Performance
+        Our machine learning model (**CatBoost**, a gradient boosting algorithm) was evaluated on unseen historical data
+        to assess how accurately it predicts hourly bike-sharing demand.
+        - **MAE (Mean Absolute Error):** On average, our predictions differ
+        from the actual hourly demand by 32 bike trips.
+        
         ## About the Dataset
         We combined bike-sharing data, weather records, time and calendar data from different sources 
         to analyze and predict hourly bike-sharing demand.
@@ -113,8 +119,14 @@ with tab1:
 
         #### Our GitHub Repository
         To learn more about the data and the machine learning models we used, please visit our [GitHub page](https://github.com/leylabk/Streamlit-app-prediction)!
+        
+        #### Meet the Team
+        Interested in learning more about the people behind this project?
+        Connect with us on LinkedIn!
 
-    """)
+        - Tatiana Pashkova <a href="https://www.linkedin.com/in/tatiana-pashkova/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/linkedin.svg" width="18" style="filter: invert(27%) sepia(91%) saturate(1600%) hue-rotate(184deg) brightness(95%) contrast(95%); vertical-align: middle;"></a>
+        - Leyla Bakacak Karabenli <a href="https://www.linkedin.com/in/leyla-bakacak-karabenli/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/linkedin.svg" width="18" style="filter: invert(27%) sepia(91%) saturate(1600%) hue-rotate(184deg) brightness(95%) contrast(95%); vertical-align: middle;"></a>
+        """, unsafe_allow_html=True)
 
     st.caption(
     "¹Dataset source: Waldner et al. (2025), "
