@@ -50,8 +50,35 @@ with open(BASE_DIR / "catboost_model_spline.pkl", "rb") as f:
 with open(BASE_DIR / "catboost_categories_spline.pkl", "rb") as f:
     categories = pickle.load(f)
 
+import base64
+
+
+with open("bike.png", "rb") as image_file:
+    bike_image = base64.b64encode(image_file.read()).decode()
+
+st.markdown(f"""
+<div style="
+    background-color: #EFF7EC;
+    background-image: url('data:image/png;base64,{bike_image}');
+    background-repeat: no-repeat;
+    background-position: right 25px center;
+    background-size: 160px auto;
+    background-blend-mode: multiply;
+    padding: 35px 240px 35px 30px;
+    border-radius: 15px;
+    min-height: 180px;
+">
+    <h1 style="color: #285B38;">
+        Welcome to the BikeCast!
+    </h1>
+    <p style="color: #45634C; font-size: 17px;">
+        Predict hourly bike-sharing demand in
+        Berlin, Dresden and Cologne.
+    </p>
+</div>
+""", unsafe_allow_html=True)
 # Title
-st.title("Welcome to the Bike Sharing Demand Prediction App! 🚲")
+# st.title("Welcome to the Bike Sharing Demand Prediction App! 🚲")
 
 tab1, tab2, tab3, tab4 = st.tabs([
     "Homepage",
