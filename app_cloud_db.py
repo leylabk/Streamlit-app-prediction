@@ -1152,3 +1152,78 @@ with tab4:
 
                             except Exception as e:
                                 st.error(f"Prediction failed: {e}")
+
+with st.expander("📘 Input Guidelines – Data Description and Accepted Values"):
+
+    st.markdown("""
+    <div style="font-size: 14px;">
+
+    Please follow these guidelines when entering prediction data or preparing
+    your CSV file for Batch Prediction.
+
+    ### 1. Location and Calendar Information
+
+    **City (`city`)**
+    - Berlin, Dresden or Cologne
+
+    **Working Day (`workingday`)**
+    - `0` – Holiday or weekend
+    - `1` – Working day
+
+    **School Break (`school_break`)**
+    - `0` – Regular school days
+    - `1` – School holidays (Schulferien)
+
+    **Month (`month`)**
+    - Whole numbers from 1 to 12 (January = 1, December = 12)
+
+    **Hour (`hour`)**
+    - Whole numbers from 0 to 23 (Midnight = 0, noon = 12, 5 PM = 17)
+
+    ### 2. Weather Measurements
+    **Weather Conditions (`weather_group`)**
+    - Clouds, Clear, Rain, Snow, Mist, Fog or Drizzle
+    
+    **Temperature (`temperature`, °C)**
+    - Numbers with up to two decimal places
+    - Typical July noon average: 23–26 °C
+    - Typical January noon average: 5–6 °C
+
+    **Humidity (`humidity`, %)**
+    - Whole numbers from 0 to 100
+    - Typical average humidity: 72–77%
+
+    **Wind Speed (`windspeed`, m/s)**
+    - Numbers with up to two decimal places
+    - Calm: 0.0–0.2 m/s
+    - Moderate breeze: 5.5–7.9 m/s
+    - Strong breeze: 10.8–13.8 m/s
+
+    **Rain (`rain`, mm)**
+    - Rainfall during the previous hour
+    - Very light: 0.25–1.0 mm
+    - Moderate: 2.5–10 mm
+    - Heavy: above 10 mm
+
+    **Snow (`snow`, mm)**
+    - Snowfall during the previous hour
+    - Light: 0.25–1.0 mm
+    - Moderate: 1.0–2.5 mm
+    - Heavy: above 2.5 mm
+
+    ---
+
+    **Important**
+    - Use the exact column names and formats in the downloadable CSV template.
+    - Weather measurements should represent realistic conditions for the selected city, date and hour.
+    - The values above are examples, not strict input limits.
+
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.caption(
+        "Sources: "
+        "[Beaufort Wind Scale](https://www.meteoswiss.admin.ch/dam/jcr:c1064242-4a6e-4df2-8d21-96e68d1def7a/Beaufort_Tabelle_en.pdf) · "
+        "[Rainfall Guide](https://rainsimulator.com/guides/intensity-categories) · "
+        "[Snowfall Guide](https://www.foxweather.com/learn/snow-101-the-basics-of-snow)"
+    )
