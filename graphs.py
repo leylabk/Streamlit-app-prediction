@@ -43,7 +43,6 @@ def show_hourly_usage(df):
         )
 
         fig.update_layout(
-            template="plotly_white",
             xaxis_title="Hour of the Day",
             yaxis_title="Average Bike-Sharing Demand",
             hovermode="x",
@@ -62,8 +61,7 @@ def show_hourly_usage(df):
 
             font=dict(
             family="Arial",
-            size=12,
-            color="#455A64"
+            size=12
             )
         )
 
@@ -159,7 +157,6 @@ def show_monthly_trends(df):
 
         # Layout styling
         fig.update_layout(
-            template="plotly_white",
             xaxis_title="Month",
             yaxis_title="Average Bike-Sharing Demand",
             hovermode="x",
@@ -178,13 +175,9 @@ def show_monthly_trends(df):
             margin=dict(l=20, r=20, t=55, b=30),
             height=400,
 
-            plot_bgcolor="white",
-            paper_bgcolor="white",
-
             font=dict(
                 family="Arial",
-                size=12,
-                color="#455A64"
+                size=12
             )
         )
 
@@ -274,7 +267,6 @@ def show_temperature_usage(df):
 
         # Layout styling
         fig.update_layout(
-            template="plotly_white",
             xaxis_title="Temperature",
             yaxis_title="Average Bike-Sharing Demand",
             hovermode="x",
@@ -292,13 +284,9 @@ def show_temperature_usage(df):
             margin=dict(l=20, r=20, t=55, b=30),
             height=400,
 
-            plot_bgcolor="white",
-            paper_bgcolor="white",
-
             font=dict(
                 family="Arial",
-                size=12,
-                color="#455A64"
+                size=12
             )
         )
 
@@ -367,7 +355,6 @@ def show_city_comparison(df):
 
         # Layout styling
         fig.update_layout(
-            template="plotly_white",
             xaxis_title="Average Bike-Sharing Demand",
             yaxis_title=None,
             hovermode="closest",
@@ -376,13 +363,9 @@ def show_city_comparison(df):
             margin=dict(l=20, r=20, t=25, b=35),
             height=400,
 
-            plot_bgcolor="white",
-            paper_bgcolor="white",
-
             font=dict(
                 family="Arial",
-                size=12,
-                color="#455A64"
+                size=12
             )
         )
 
@@ -499,7 +482,6 @@ def show_weather_usage(df):
 
         # Layout styling
         fig.update_layout(
-            template="plotly_white",
             xaxis_title=None,
             yaxis_title="Average Bike-Sharing Demand",
             hovermode="closest",
@@ -520,13 +502,9 @@ def show_weather_usage(df):
             margin=dict(l=20, r=20, t=65, b=35),
             height=480,
 
-            plot_bgcolor="white",
-            paper_bgcolor="white",
-
             font=dict(
                 family="Arial",
-                size=12,
-                color="#455A64"
+                size=12
             )
         )
 
