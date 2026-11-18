@@ -69,7 +69,7 @@ st.markdown(f"""
     min-height: 180px;
 ">
     <h1 style="color: #285B38;">
-        Welcome to the BikeCast!
+        Welcome to BikeCast!
     </h1>
     <p style="color: #45634C; font-size: 17px;">
         Predict hourly bike-sharing demand in
@@ -77,8 +77,6 @@ st.markdown(f"""
     </p>
 </div>
 """, unsafe_allow_html=True)
-# Title
-# st.title("Welcome to the Bike Sharing Demand Prediction App! 🚲")
 
 tab1, tab2, tab3, tab4 = st.tabs([
     "Homepage",
@@ -97,21 +95,25 @@ with tab1:
         #### Model Performance
         Our machine learning model (**CatBoost**, a gradient boosting algorithm) was evaluated on unseen historical data
         to assess how accurately it predicts hourly bike-sharing demand.
-        - **MAE (Mean Absolute Error):** On average, our predictions differ
-        from the actual hourly demand by 32 bike trips.
         
+        - **R²:** Our model explains 93% of the variation in hourly bike rentals. 
+        This means it captures most of the patterns behind why the number of bike rentals changes from one hour to another.
+        The remaining 7% may be influenced by other factors that are not included in our model.
+       
         ## About the Dataset
         We combined bike-sharing data, weather records, time and calendar data from different sources 
         to analyze and predict hourly bike-sharing demand.
 
-        #### Factors Used for Predictions
-        - **Weather Factors:** Overall weather conditions (clear, cloudy, rainy, drizzly, foggy, misty), temperature, humidity, wind speed, amount of rainfall and snowfall in the previous hour.
-        - **Time Factors:** Month and hour of the day.
-        - **Calendar Factors:** Whether it is working day (vs. a holiday/weekend) and whether it is a school break (Schulferien; vs. regular school time).
-        - **Location Factor:** City name (Berlin, Cologne, Dresden).
-
         #### Target that We Are Predicting
         **Started bike trips:** The number of bike-sharing trips started within each hour. It represents the demand for available ready-to-use bikes that a company needs to prepare.
+
+        #### Factors Used for Predictions
+        - **Location and Calendar Factors:** City (Berlin, Cologne, Dresden), month, hour of the day, 
+        working day (vs. holiday/weekend), 
+        and school holidays (Schulferien vs. regular school periods).
+        - **Weather Factors:** Weather conditions (clouds, clear, rain, snow, mist, drizzle or fog), 
+        temperature, humidity, wind speed, 
+        and rainfall and snowfall during the previous hour.
 
         #### Data Sources
         - **Bike-Sharing Data:** Historical bike-sharing records obtained
@@ -203,8 +205,7 @@ with tab2:
     col5, col6 = st.columns(2, gap="large")
 
     show_weather_usage(df)
-  
-        
+    
 
 with tab3:
 
@@ -782,6 +783,81 @@ with tab4:
         "to generate multiple hourly bike-sharing demand predictions."
     )
 
+    with st.expander("📘 Input Guidelines – Data Description and Accepted Values"):
+    
+        st.markdown("""
+        <div style="font-size: 14px;">
+    
+        Please follow these guidelines when entering prediction data or preparing
+        your CSV file for Batch Prediction.
+    
+        ### 1. Location and Calendar Information
+    
+        **City (`city`)**
+        - Berlin, Dresden or Cologne
+    
+        **Working Day (`workingday`)**
+        - `0` – Holiday or weekend
+        - `1` – Working day
+    
+        **School Break (`school_break`)**
+        - `0` – Regular school days
+        - `1` – School holidays (Schulferien)
+    
+        **Month (`month`)**
+        - Whole numbers from 1 to 12 (January = 1, December = 12)
+    
+        **Hour (`hour`)**
+        - Whole numbers from 0 to 23 (Midnight = 0, noon = 12, 5 PM = 17)
+    
+        ### 2. Weather Measurements
+        **Weather Conditions (`weather_group`)**
+        - Clouds, Clear, Rain, Snow, Mist, Drizzle or Fog
+        
+        **Temperature (`temperature`, °C)**
+        - Numbers with up to two decimal places
+        - Typical July noon average: 23–26 °C
+        - Typical January noon average: 5–6 °C
+    
+        **Humidity (`humidity`, %)**
+        - Whole numbers from 0 to 100
+        - Typical average humidity: 72–77%
+    
+        **Wind Speed (`windspeed`, m/s)**
+        - Numbers with up to two decimal places
+        - Calm: 0.0–0.2 m/s
+        - Moderate breeze: 5.5–7.9 m/s
+        - Strong breeze: 10.8–13.8 m/s
+    
+        **Rain (`rain`, mm)**
+        - Rainfall during the previous hour
+        - Very light: 0.25–1.0 mm
+        - Moderate: 2.5–10 mm
+        - Heavy: above 10 mm
+    
+        **Snow (`snow`, mm)**
+        - Snowfall during the previous hour
+        - Light: 0.25–1.0 mm
+        - Moderate: 1.0–2.5 mm
+        - Heavy: above 2.5 mm
+    
+        ---
+    
+        **Important**
+        - Use the exact column names and formats in the downloadable CSV template.
+        - Weather measurements should represent realistic conditions for the selected city, date and hour.
+        - The values above are examples, not strict input limits.
+    
+        </div>
+        """, unsafe_allow_html=True)
+    
+        st.caption(
+            "Sources: "
+            "[Beaufort Wind Scale](https://www.meteoswiss.admin.ch/dam/jcr:c1064242-4a6e-4df2-8d21-96e68d1def7a/Beaufort_Tabelle_en.pdf) · "
+            "[Rainfall Guide](https://rainsimulator.com/guides/intensity-categories) · "
+            "[Snowfall Guide](https://www.foxweather.com/learn/snow-101-the-basics-of-snow)"
+        )
+
     # STEP 1: INDIVIDUAL PREDICTION
     with st.container(border=True):
         st.subheader("1. Individual Bike Demand Prediction")
@@ -791,7 +867,7 @@ with tab4:
             "including weather and calendar information."
         )
 
-        st.markdown("**Categorical Features**")
+        st.markdown("**Location and Calendar Factors**")
 
         col1, col2 = st.columns(2)
 
@@ -802,10 +878,22 @@ with tab4:
                 key="manual_city"
             )
 
-            weather_group = st.selectbox(
-                "Weather Group",
-                categories["weather_group"],
-                key="manual_weather"
+            month = st.number_input(
+                "Month",
+                min_value=1,
+                max_value=12,
+                value=1,
+                step=1,
+                key="manual_month"
+            )
+
+            hour = st.number_input(
+                "Hour",
+                min_value=0,
+                max_value=23,
+                value=12,
+                step=1,
+                key="manual_hour"
             )
 
         with col2:
@@ -823,37 +911,17 @@ with tab4:
 
         st.divider()
 
-        st.markdown("**Time Features**")
+        st.markdown("**Weather Factors**")
 
         col3, col4 = st.columns(2)
 
         with col3:
-            month = st.number_input(
-                "Month",
-                min_value=1,
-                max_value=12,
-                value=1,
-                step=1,
-                key="manual_month"
+            weather_group = st.selectbox(
+                "Weather Conditions",
+                categories["weather_group"],
+                key="manual_weather"
             )
 
-        with col4:
-            hour = st.number_input(
-                "Hour",
-                min_value=0,
-                max_value=23,
-                value=12,
-                step=1,
-                key="manual_hour"
-            )
-
-        st.divider()
-
-        st.markdown("**Weather Measurements**")
-
-        col5, col6 = st.columns(2)
-
-        with col5:
             temp = st.number_input(
                 "Temperature",
                 value=20.0,
@@ -866,13 +934,12 @@ with tab4:
                 key="manual_humidity"
             )
 
+        with col4:
             wind_speed = st.number_input(
                 "Wind Speed",
                 value=0.0,
                 key="manual_wind"
             )
-
-        with col6:
             rain_1h = st.number_input(
                 "Rain (1h)",
                 value=0.0,
@@ -884,8 +951,6 @@ with tab4:
                 value=0.0,
                 key="manual_snow"
             )
-
-        st.divider()
 
         if st.button(
             "Generate Predictions",
@@ -1152,78 +1217,3 @@ with tab4:
 
                             except Exception as e:
                                 st.error(f"Prediction failed: {e}")
-
-    with st.expander("📘 Input Guidelines – Data Description and Accepted Values"):
-    
-        st.markdown("""
-        <div style="font-size: 14px;">
-    
-        Please follow these guidelines when entering prediction data or preparing
-        your CSV file for Batch Prediction.
-    
-        ### 1. Location and Calendar Information
-    
-        **City (`city`)**
-        - Berlin, Dresden or Cologne
-    
-        **Working Day (`workingday`)**
-        - `0` – Holiday or weekend
-        - `1` – Working day
-    
-        **School Break (`school_break`)**
-        - `0` – Regular school days
-        - `1` – School holidays (Schulferien)
-    
-        **Month (`month`)**
-        - Whole numbers from 1 to 12 (January = 1, December = 12)
-    
-        **Hour (`hour`)**
-        - Whole numbers from 0 to 23 (Midnight = 0, noon = 12, 5 PM = 17)
-    
-        ### 2. Weather Measurements
-        **Weather Conditions (`weather_group`)**
-        - Clouds, Clear, Rain, Snow, Mist, Fog or Drizzle
-        
-        **Temperature (`temperature`, °C)**
-        - Numbers with up to two decimal places
-        - Typical July noon average: 23–26 °C
-        - Typical January noon average: 5–6 °C
-    
-        **Humidity (`humidity`, %)**
-        - Whole numbers from 0 to 100
-        - Typical average humidity: 72–77%
-    
-        **Wind Speed (`windspeed`, m/s)**
-        - Numbers with up to two decimal places
-        - Calm: 0.0–0.2 m/s
-        - Moderate breeze: 5.5–7.9 m/s
-        - Strong breeze: 10.8–13.8 m/s
-    
-        **Rain (`rain`, mm)**
-        - Rainfall during the previous hour
-        - Very light: 0.25–1.0 mm
-        - Moderate: 2.5–10 mm
-        - Heavy: above 10 mm
-    
-        **Snow (`snow`, mm)**
-        - Snowfall during the previous hour
-        - Light: 0.25–1.0 mm
-        - Moderate: 1.0–2.5 mm
-        - Heavy: above 2.5 mm
-    
-        ---
-    
-        **Important**
-        - Use the exact column names and formats in the downloadable CSV template.
-        - Weather measurements should represent realistic conditions for the selected city, date and hour.
-        - The values above are examples, not strict input limits.
-    
-        </div>
-        """, unsafe_allow_html=True)
-    
-        st.caption(
-            "Sources: "
-            "[Beaufort Wind Scale](https://www.meteoswiss.admin.ch/dam/jcr:c1064242-4a6e-4df2-8d21-96e68d1def7a/Beaufort_Tabelle_en.pdf) · "
-            "[Rainfall Guide](https://rainsimulator.com/guides/intensity-categories) · "
-            "[Snowfall Guide](https://www.foxweather.com/learn/snow-101-the-basics-of-snow)"
-        )
