@@ -113,7 +113,7 @@ with tab1:
         and school holidays (Schulferien vs. regular school periods).
         - **Weather Factors:** Weather conditions (clouds, clear, rain, snow, mist, drizzle or fog), 
         temperature, humidity, wind speed, 
-        and rainfall and snowfall during the previous hour.
+        rainfall and snowfall during the previous hour.
 
         #### Data Sources
         - **Bike-Sharing Data:** Historical bike-sharing records obtained
@@ -795,7 +795,13 @@ with tab4:
     
         **City (`city`)**
         - Berlin, Dresden or Cologne
+        
+        **Month (`month`)**
+        - Whole numbers from 1 to 12 (January = 1, December = 12)
     
+        **Hour (`hour`)**
+        - Whole numbers from 0 to 23 (Midnight = 0, noon = 12, 5 PM = 17)   
+        
         **Working Day (`workingday`)**
         - `0` – Holiday or weekend
         - `1` – Working day
@@ -804,13 +810,8 @@ with tab4:
         - `0` – Regular school days
         - `1` – School holidays (Schulferien)
     
-        **Month (`month`)**
-        - Whole numbers from 1 to 12 (January = 1, December = 12)
     
-        **Hour (`hour`)**
-        - Whole numbers from 0 to 23 (Midnight = 0, noon = 12, 5 PM = 17)
-    
-        ### 2. Weather Measurements
+        ### 2. Weather Information
         **Weather Conditions (`weather_group`)**
         - Clouds, Clear, Rain, Snow, Mist, Drizzle or Fog
         
