@@ -78,11 +78,12 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "Homepage",
     "Data Visualization",
     "Automatic Prediction",
-    "Manual Prediction"
+    "Manual Prediction",
+    "Explore BikeCast"
 ])
 
 with tab1:
@@ -1218,3 +1219,51 @@ with tab4:
 
                             except Exception as e:
                                 st.error(f"Prediction failed: {e}")
+
+with tab5:
+    st.markdown(
+        "<h1 style='text-align: center;'>"
+        "Thanks for Exploring BikeCast! 🚲"
+        "</h1>",
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        "<h3 style='text-align: center;'>"
+        "Want to try it yourself?"
+        "</h3>",
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        "<p style='text-align: center;'>"
+        "Scan the QR code to visit our GitHub repository, "
+        "where you can explore the project and find the link to try the BikeCast app."
+        "</p>",
+        unsafe_allow_html=True
+    )
+
+    # Center QR Code
+    col1, col2, col3 = st.columns([1, 1, 1])
+
+    with col2:
+        with open("bikecast_qr.png", "rb") as image_file:
+            qr_base64 = base64.b64encode(image_file.read()).decode()
+
+        st.markdown(
+            f"""
+            <div style="display: flex; justify-content: center; width: 100%;">
+                <img src="data:image/png;base64,{qr_base64}"
+                    width="250"
+                    style="display: block; margin: auto;">
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    st.markdown(
+        "<p style='text-align: center; color: gray;'>"
+        "Thank you for your time!"
+        "</p>",
+        unsafe_allow_html=True
+    )
