@@ -1223,7 +1223,7 @@ with tab4:
 with tab5:
     st.markdown(
         "<h1 style='text-align: center;'>"
-        "Thanks for Exploring BikeCast! 🚲"
+        "Thanks for Exploring BikeCast!"
         "</h1>",
         unsafe_allow_html=True
     )
