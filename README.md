@@ -16,9 +16,12 @@ Want to see the application in action?
 ├── .gitignore
 ├── README.md
 ├── app_cloud_db.py
+├── bike.png
+├── bikecast_qr.png
 ├── catboost_categories_spline.pkl
 ├── catboost_model_spline.pkl
 ├── functions_cloud_db.py
+├── graphs.py
 ├── requirements.txt
 └── school_holidays.py
 ```
@@ -30,9 +33,12 @@ Want to see the application in action?
 | `.gitignore` | Specifies files and directories that Git should ignore. |
 | `README.md` | Contains project documentation and setup instructions. |
 | `app_cloud_db.py` | Main Streamlit application for bike-sharing demand prediction with cloud database integration. |
+| `bike.png` | Contains the bike image used in the application interface. |
+| `bikecast_qr.png` | Contains a QR code that provides quick access to the BikeCast application via GitHub. |
 | `catboost_categories_spline.pkl` | Saved CatBoost model for categorical features. |
 | `catboost_model_spline.pkl` | Saved CatBoost model using spline-based features. |
 | `functions_cloud_db.py` | Contains helper functions for data processing, weather data retrieval, database operations, and predictions. |
+| `graphs.py` | Contains functions for generating and displaying data visualizations. |
 | `requirements.txt` | Lists the Python dependencies required to run the project. |
 | `school_holidays.py` | Contains functionality for handling school holiday information. |
 
